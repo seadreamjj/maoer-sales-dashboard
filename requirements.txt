@@ -1,0 +1,4 @@
+pandas>=2.2,<3
+numpy>=1.26,<3
+pypinyin>=0.54,<1
+openpyxl>=3.1,<4
