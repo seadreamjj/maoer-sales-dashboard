@@ -1,0 +1,89 @@
+name: 猫耳月榜自动抓取与 Dashboard 更新
+
+on:
+  # 手动运行：第一次部署、Cookie 更新后测试、临时补抓时使用
+  workflow_dispatch:
+
+  # 每天北京时间 08:10 自动运行
+  schedule:
+    - cron: '10 8 * * *'
+      timezone: 'Asia/Shanghai'
+
+  # 修改抓取/分析代码后自动测试并发布
+  push:
+    branches: [main]
+    paths:
+      - 'fetch_rank.py'
+      - 'build_site.py'
+      - 'requirements.txt'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: maoer-dashboard
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch today's 猫耳 monthly ranking
+        env:
+          MAOER_COOKIE: ${{ secrets.MAOER_COOKIE }}
+        run: python fetch_rank.py
+
+      - name: Build Dashboard
+        run: python build_site.py
+
+      # 把当天 CSV 写回仓库，这样下一次 Actions 运行时能够读取完整历史。
+      # 使用 [skip ci] 避免这个自动提交再次触发本 workflow。
+      - name: Save daily data to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/
+          if git diff --cached --quiet; then
+            echo "没有新的数据文件需要提交。"
+          else
+            git commit -m "data: update 猫耳月榜 [skip ci]"
+            git push
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: './site'
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
