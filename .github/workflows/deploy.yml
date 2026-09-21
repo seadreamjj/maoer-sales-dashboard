@@ -65,6 +65,7 @@ jobs:
             echo "没有新的数据文件需要提交。"
           else
             git commit -m "data: update 猫耳月榜 [skip ci]"
+            git pull --rebase origin main
             git push
           fi
 
