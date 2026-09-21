@@ -1,22 +1,20 @@
 name: 猫耳月榜自动抓取与 Dashboard 更新
 
 on:
-  # 手动运行：第一次部署、Cookie 更新后测试、临时补抓时使用
   workflow_dispatch:
 
-  # 每天北京时间 08:10 自动运行
   schedule:
-    - cron: '10 8 * * *'
-      timezone: 'Asia/Shanghai'
+    - cron: "0 3 * * *"
+      timezone: "Asia/Shanghai"
 
-  # 修改抓取/分析代码后自动测试并发布
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - 'fetch_rank.py'
-      - 'build_site.py'
-      - 'requirements.txt'
-      - '.github/workflows/deploy.yml'
+      - "build_site.py"
+      - "fetch_rank.py"
+      - "requirements.txt"
+      - ".github/workflows/deploy.yml"
 
 permissions:
   contents: write
