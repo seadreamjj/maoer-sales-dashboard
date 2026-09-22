@@ -1,0 +1,51 @@
+name: 抓取猫耳数据
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+      timezone: 'Asia/Shanghai'
+
+concurrency:
+  group: maoer-fetch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch 猫耳三榜单
+        env:
+          MAOER_COOKIE: ${{ secrets.MAOER_COOKIE }}
+        run: python fetch_rank.py
+
+      - name: Save daily data to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/ logs/
+          if git diff --cached --quiet; then
+            echo "没有新的数据文件需要提交。"
+          else
+            git commit -m "data: update 猫耳榜单"
+            git pull --rebase origin main
+            git push
+          fi
