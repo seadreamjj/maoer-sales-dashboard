@@ -2,50 +2,308 @@ name: 抓取猫耳数据
 
 on:
   workflow_dispatch:
+
   schedule:
+    # GitHub Actions 的定时任务可能延迟
+    # 设置多个唤醒点，提高当天成功抓取的机会
+
+    - cron: '48 2 * * *'
+      timezone: 'Asia/Shanghai'
+      
     - cron: '18 3 * * *'
       timezone: 'Asia/Shanghai'
 
+    - cron: '48 3 * * *'
+      timezone: 'Asia/Shanghai'
+
+    - cron: '18 4 * * *'
+      timezone: 'Asia/Shanghai'
+
+    - cron: '48 4 * * *'
+      timezone: 'Asia/Shanghai'
+
+
+# 防止多个定时任务同时修改仓库
 concurrency:
   group: maoer-fetch
   cancel-in-progress: false
 
+
 permissions:
   contents: write
+
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================================
+      # 1. Checkout
+      # ============================================================
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
+
+      # ============================================================
+      # 2. Python
+      # ============================================================
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
 
+      # ============================================================
+      # 3. 安装依赖
+      # ============================================================
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+
+      # ============================================================
+      # 4. 同步到最新 main
+      #
+      # 非常重要：
+      # 如果前一个定时任务刚刚 push 了今天的数据，
+      # 当前 workflow 必须先看到最新 main。
+      # ============================================================
+      - name: Sync latest main
+        run: |
+          echo "同步远程 main..."
+
+          git fetch origin main
+
+          git reset --hard origin/main
+
+          echo "当前 commit："
+          git rev-parse --short HEAD
+
+
+      # ============================================================
+      # 5. 检查今天的数据是否已经完整
+      # ============================================================
+      - name: Check today's data
+        id: check_today
+        shell: bash
+        run: |
+
+          DATE=$(TZ=Asia/Shanghai date +%Y%m%d)
+
+          echo "=========================================="
+          echo "北京时间："
+          TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S'
+
+          echo "统计日期：$DATE"
+          echo "=========================================="
+
+          SALES="data/raw/猫耳销量月榜${DATE}.csv"
+          POPULAR="data/raw/猫耳人气月榜${DATE}.csv"
+          NEW="data/raw/猫耳新品日榜${DATE}.csv"
+
+          echo ""
+          echo "检查以下文件："
+          echo "  $SALES"
+          echo "  $POPULAR"
+          echo "  $NEW"
+          echo ""
+
+          SALES_OK=false
+          POPULAR_OK=false
+          NEW_OK=false
+
+
+          # --------------------------------------------------------
+          # 销量月榜
+          # --------------------------------------------------------
+          if [ -s "$SALES" ]; then
+            SALES_OK=true
+            echo "✅ 销量月榜：已存在"
+          else
+            echo "❌ 销量月榜：不存在"
+          fi
+
+
+          # --------------------------------------------------------
+          # 人气月榜
+          # --------------------------------------------------------
+          if [ -s "$POPULAR" ]; then
+            POPULAR_OK=true
+            echo "✅ 人气月榜：已存在"
+          else
+            echo "❌ 人气月榜：不存在"
+          fi
+
+
+          # --------------------------------------------------------
+          # 新品日榜
+          # --------------------------------------------------------
+          if [ -s "$NEW" ]; then
+            NEW_OK=true
+            echo "✅ 新品日榜：已存在"
+          else
+            echo "❌ 新品日榜：不存在"
+          fi
+
+
+          # --------------------------------------------------------
+          # 三个榜单全部存在
+          # --------------------------------------------------------
+          if [ "$SALES_OK" = true ] && \
+             [ "$POPULAR_OK" = true ] && \
+             [ "$NEW_OK" = true ]; then
+
+            echo ""
+            echo "=========================================="
+            echo "✅ 今天三个榜单都已经存在"
+            echo "不再重复抓取。"
+            echo "=========================================="
+
+            echo "done=true" >> "$GITHUB_OUTPUT"
+
+          else
+
+            echo ""
+            echo "=========================================="
+            echo "⚠️ 今天的数据不完整"
+            echo "需要执行抓取。"
+            echo "=========================================="
+
+            echo "done=false" >> "$GITHUB_OUTPUT"
+
+          fi
+
+
+      # ============================================================
+      # 6. 抓取猫耳三榜单
+      # ============================================================
       - name: Fetch 猫耳三榜单
+        if: steps.check_today.outputs.done != 'true'
         env:
           MAOER_COOKIE: ${{ secrets.MAOER_COOKIE }}
-        run: python fetch_rank.py
-
-      - name: Save daily data to repository
         run: |
+          echo "=========================================="
+          echo "开始抓取猫耳三榜单"
+          echo "=========================================="
+
+          python fetch_rank.py
+
+
+      # ============================================================
+      # 7. 抓取后检查文件
+      #
+      # 防止 fetch_rank.py 虽然退出码为 0，
+      # 但实际上少生成了某个榜单。
+      # ============================================================
+      - name: Verify today's data
+        if: steps.check_today.outputs.done != 'true'
+        shell: bash
+        run: |
+
+          DATE=$(TZ=Asia/Shanghai date +%Y%m%d)
+
+          SALES="data/raw/猫耳销量月榜${DATE}.csv"
+          POPULAR="data/raw/猫耳人气月榜${DATE}.csv"
+          NEW="data/raw/猫耳新品日榜${DATE}.csv"
+
+          echo "=========================================="
+          echo "检查抓取结果"
+          echo "统计日期：$DATE"
+          echo "=========================================="
+
+          FAILED=false
+
+
+          if [ -s "$SALES" ]; then
+            echo "✅ $SALES"
+          else
+            echo "❌ 缺少：$SALES"
+            FAILED=true
+          fi
+
+
+          if [ -s "$POPULAR" ]; then
+            echo "✅ $POPULAR"
+          else
+            echo "❌ 缺少：$POPULAR"
+            FAILED=true
+          fi
+
+
+          if [ -s "$NEW" ]; then
+            echo "✅ $NEW"
+          else
+            echo "❌ 缺少：$NEW"
+            FAILED=true
+          fi
+
+
+          if [ "$FAILED" = true ]; then
+            echo ""
+            echo "❌ 今天的数据没有完整生成。"
+            echo "本次 workflow 不会提交不完整数据。"
+            exit 1
+          fi
+
+
+          echo ""
+          echo "✅ 三个榜单均已成功生成。"
+
+
+      # ============================================================
+      # 8. 再次同步远程 main
+      #
+      # 防止 workflow 运行期间 main 又发生变化。
+      # ============================================================
+      - name: Sync before commit
+        if: steps.check_today.outputs.done != 'true'
+        run: |
+          echo "同步最新远程 main..."
+
+          git fetch origin main
+
+          git rebase origin/main
+
+
+      # ============================================================
+      # 9. 提交数据
+      # ============================================================
+      - name: Save daily data to repository
+        if: steps.check_today.outputs.done != 'true'
+        shell: bash
+        run: |
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          echo "检查 Git 变化..."
+
           git add data/raw/ logs/
+
           if git diff --cached --quiet; then
+
+            echo ""
             echo "没有新的数据文件需要提交。"
+
           else
+
+            echo ""
+            echo "发现新的数据文件："
+            git diff --cached --stat
+
             git commit -m "data: update 猫耳榜单"
-            git pull --rebase origin main
-            git push
+
+            echo ""
+            echo "推送到 GitHub..."
+
+            git push origin main
+
+            echo ""
+            echo "✅ 数据已经成功提交。"
+
           fi
