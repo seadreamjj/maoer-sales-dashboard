@@ -1,6 +1,6 @@
-# 猫耳销量月榜自动化 Dashboard
+# mimi销量月榜自动化 Dashboard
 
-这是基于《猫耳销量月榜跨期分析系统 V2》的 GitHub Actions + GitHub Pages 版本。
+这是基于《mimi销量月榜跨期分析系统 V2》的 GitHub Actions + GitHub Pages 版本。
 
 ## 自动化链路
 
@@ -16,69 +16,9 @@
 8. GitHub Pages 自动发布
 9. 当天 CSV 自动提交回仓库，供下一次运行使用
 
-因此不需要每天开电脑，也不需要每天运行 Colab。
 
-## 第一次设置
 
-### 1. 创建 GitHub Repository
 
-建议使用 Public repository，以便使用 GitHub Free 的公开仓库 Actions + Pages 工作流。
-
-### 2. 上传整个项目
-
-仓库根目录应该直接包含：
-
-```text
-fetch_rank.py
-build_site.py
-requirements.txt
-.github/workflows/deploy.yml
-data/raw/
-```
-
-### 3. 设置猫耳 Cookie
-
-不要把 Cookie 写入 `fetch_rank.py`。
-
-进入：
-
-`Settings → Secrets and variables → Actions → Secrets → New repository secret`
-
-创建：
-
-```text
-Name: MAOER_COOKIE
-Value: 你的猫耳 Cookie
-```
-
-Cookie 只通过 GitHub Actions Secret 注入运行环境。
-
-### 4. 开启 GitHub Pages
-
-进入：
-
-`Settings → Pages → Build and deployment → Source → GitHub Actions`
-
-然后在：
-
-`Actions → 猫耳月榜自动抓取与 Dashboard 更新 → Run workflow`
-
-手动运行一次。
-
-## 日常运行
-
-默认每天北京时间 08:10 自动运行。
-
-也可以随时手动 `Run workflow`。
-
-## 增量图表
-
-Dashboard 支持手动切换：
-
-- **7日增量**：当天值 − 7 个自然日前的值
-- **每日增量**：当天值 − 前一天的值
-
-播放量、订阅数、全部集弹幕 UID、付费集弹幕 UID 四组图表会同步切换。
 
 ## 数据口径
 
@@ -110,4 +50,3 @@ Dashboard 支持手动切换：
 
 每天成功抓取的 CSV 会提交到 `data/raw/`，因此跨期分析可以持续累积历史数据。
 
-这些 CSV 如果仓库是 Public，也会成为公开仓库内容。若你不希望公开历史原始数据，需要改成外部存储或私有数据方案，而不能直接把原始 CSV 提交到公开仓库。
