@@ -3,24 +3,20 @@ name: 抓取猫耳数据
 on:
   workflow_dispatch:
 
+  # ============================================================
+  # cron-job.org / 外部服务触发
+  # ============================================================
+  repository_dispatch:
+    types: [fetch-maoer]
+
   schedule:
     # GitHub Actions 的定时任务可能延迟
     # 设置多个唤醒点，提高当天成功抓取的机会
 
     - cron: '48 2 * * *'
       timezone: 'Asia/Shanghai'
-      
-    - cron: '18 3 * * *'
-      timezone: 'Asia/Shanghai'
 
-    - cron: '48 3 * * *'
-      timezone: 'Asia/Shanghai'
-
-    - cron: '18 4 * * *'
-      timezone: 'Asia/Shanghai'
-
-    - cron: '48 4 * * *'
-      timezone: 'Asia/Shanghai'
+    
 
 
 # 防止多个定时任务同时修改仓库
