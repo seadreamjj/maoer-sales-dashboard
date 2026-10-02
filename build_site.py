@@ -182,30 +182,185 @@ def summary(df,start,end):
 
 
 def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
-    """计算销量月榜表现指数；详情页不传日期时使用完整生命周期。"""
-    empty={"score":None,"days":0,"total_days":0,"days_rate":0,"avg_rank":None,"best_rank":None,"top5_days":0,"top10_days":0,"top20_days":0,"top5_rate":0,"top10_rate":0,"top20_rate":0,"rank_quality":0,"rank_points":0,"avg_daily_points":0}
-    if df is None or df.empty:return empty
-    x=df.copy();x["日期"]=pd.to_datetime(x["日期"],errors="coerce");x["排名"]=pd.to_numeric(x["排名"],errors="coerce")
-    x=x.dropna(subset=["日期","排名"]);x=x[(x["排名"]>=1)&(x["排名"]<=rank_limit)]
-    if x.empty:return empty
-    if start_date is not None:start_date=pd.to_datetime(start_date)
-    if end_date is not None:end_date=pd.to_datetime(end_date)
-    if start_date is None:start_date=x["日期"].min()
-    if end_date is None:end_date=x["日期"].max()
-    if start_date>end_date:return empty
-    x=x[(x["日期"]>=start_date)&(x["日期"]<=end_date)]
+    """
+    计算猫耳销量月榜表现指数。
+
+    综合评分：
+        Score = 100 * (0.30 * D + 0.50 * R + 0.20 * H)
+
+    D：上榜持续度，占 30%
+        有效上榜天数 / 统计周期自然日数
+
+    R：排名质量，占 50%
+        mean((51 - rank) / 50)
+
+    H：高位表现，占 20%
+        0.40 * Top2Rate
+      + 0.30 * Top5Rate
+      + 0.20 * Top10Rate
+      + 0.10 * Top20Rate
+
+    参数：
+        df：单部剧的历史排名 DataFrame，必须包含「日期」「排名」列。
+        start_date：统计开始日期；不传则使用有效记录的最早日期。
+        end_date：统计结束日期；不传则使用有效记录的最晚日期。
+        rank_limit：有效排名上限，默认 50。
+
+    返回：
+        dict，包含综合评分、上榜情况、各高位区间天数、
+        排名积分等指标。
+    """
+
+    empty = {
+        "score": None,
+        "days": 0,
+        "total_days": 0,
+        "days_rate": 0,
+        "avg_rank": None,
+        "best_rank": None,
+        "top2_days": 0,
+        "top5_days": 0,
+        "top10_days": 0,
+        "top20_days": 0,
+        "top2_rate": 0,
+        "top5_rate": 0,
+        "top10_rate": 0,
+        "top20_rate": 0,
+        "rank_quality": 0,
+        "high_rank_score": 0,
+        "rank_points": 0,
+        "avg_daily_points": 0,
+    }
+
+    if df is None or df.empty:
+        return empty
+
+    # 1. 清洗日期与排名
+    x = df.copy()
+
+    x["日期"] = pd.to_datetime(x["日期"], errors="coerce").dt.normalize()
+    x["排名"] = pd.to_numeric(x["排名"], errors="coerce")
+
+    x = x.dropna(subset=["日期", "排名"])
+    x = x[
+        (x["排名"] >= 1)
+        & (x["排名"] <= rank_limit)
+        & (x["排名"] % 1 == 0)
+    ]
+
     if x.empty:
-        empty["total_days"]=int((end_date-start_date).days+1);return empty
-    x=x.sort_values(["日期","排名"]).drop_duplicates(["日期"],keep="first")
-    total_days=int((end_date-start_date).days+1);days=int(len(x));days_rate=days/total_days if total_days else 0
-    x["rank_quality"]=(rank_limit+1-x["排名"])/rank_limit;rank_quality=float(x["rank_quality"].mean())
-    top5_days=int((x["排名"]<=5).sum());top10_days=int((x["排名"]<=10).sum());top20_days=int((x["排名"]<=20).sum())
-    top5_rate=top5_days/total_days if total_days else 0;top10_rate=top10_days/total_days if total_days else 0;top20_rate=top20_days/total_days if total_days else 0
-    rank_points=int((rank_limit+1-x["排名"]).sum());avg_daily_points=rank_points/days if days else 0
-    score=100*(0.30*days_rate+0.50*rank_quality+0.14*top10_rate+0.06*top20_rate)
-    return {"score":round(score,2),"days":days,"total_days":total_days,"days_rate":round(days_rate,4),"avg_rank":round(float(x["排名"].mean()),2),"best_rank":int(x["排名"].min()),"top5_days":top5_days,"top10_days":top10_days,"top20_days":top20_days,"top5_rate":round(top5_rate,4),"top10_rate":round(top10_rate,4),"top20_rate":round(top20_rate,4),"rank_quality":round(rank_quality,4),"rank_points":rank_points,"avg_daily_points":round(avg_daily_points,1)}
+        return empty
 
+    # 2. 确定统计周期
+    if start_date is None:
+        start_date = x["日期"].min()
+    else:
+        start_date = pd.to_datetime(start_date).normalize()
 
+    if end_date is None:
+        end_date = x["日期"].max()
+    else:
+        end_date = pd.to_datetime(end_date).normalize()
+
+    if start_date > end_date:
+        return empty
+
+    total_days = int((end_date - start_date).days + 1)
+
+    # 只保留统计周期内的记录
+    x = x[
+        (x["日期"] >= start_date)
+        & (x["日期"] <= end_date)
+    ]
+
+    empty["total_days"] = total_days
+
+    if x.empty:
+        return empty
+
+    # 3. 每天只保留最高排名
+    #    排名数字越小，排名越高
+    x = (
+        x.sort_values(["日期", "排名"])
+        .drop_duplicates(subset=["日期"], keep="first")
+    )
+
+    ranks = x["排名"].astype(int)
+
+    # 4. D：上榜持续度
+    days = int(len(x))
+    days_rate = days / total_days if total_days > 0 else 0
+
+    # 5. R：排名质量
+    #    第 1 名 = 1.00，第 50 名 = 0.02
+    rank_quality = float(
+        ((rank_limit + 1 - ranks) / rank_limit).mean()
+    )
+
+    # 6. Top 2 / Top 5 / Top 10 / Top 20 天数
+    top2_days = int((ranks <= 2).sum())
+    top5_days = int((ranks <= 5).sum())
+    top10_days = int((ranks <= 10).sum())
+    top20_days = int((ranks <= 20).sum())
+
+    # 7. 各区间上榜率
+    #    分母使用统计周期的自然日数
+    top2_rate = top2_days / total_days
+    top5_rate = top5_days / total_days
+    top10_rate = top10_days / total_days
+    top20_rate = top20_days / total_days
+
+    # 8. H：高位表现
+    high_rank_score = (
+        0.40 * top2_rate
+        + 0.30 * top5_rate
+        + 0.20 * top10_rate
+        + 0.10 * top20_rate
+    )
+
+    # 9. 最终综合评分
+    score = 100 * (
+        0.30 * days_rate
+        + 0.50 * rank_quality
+        + 0.20 * high_rank_score
+    )
+
+    # 10. 排名积分
+    #     第 1 名 = 50 分，第 50 名 = 1 分
+    rank_points = int((rank_limit + 1 - ranks).sum())
+
+    avg_daily_points = (
+        rank_points / days if days > 0 else 0
+    )
+
+    # 11. 返回结果
+    return {
+        "score": round(score, 2),
+
+        "days": days,
+        "total_days": total_days,
+        "days_rate": round(days_rate, 4),
+
+        "avg_rank": round(float(ranks.mean()), 2),
+        "best_rank": int(ranks.min()),
+
+        "top2_days": top2_days,
+        "top5_days": top5_days,
+        "top10_days": top10_days,
+        "top20_days": top20_days,
+
+        "top2_rate": round(top2_rate, 4),
+        "top5_rate": round(top5_rate, 4),
+        "top10_rate": round(top10_rate, 4),
+        "top20_rate": round(top20_rate, 4),
+
+        "rank_quality": round(rank_quality, 4),
+        "high_rank_score": round(high_rank_score, 4),
+
+        "rank_points": rank_points,
+        "avg_daily_points": round(avg_daily_points, 1),
+    }
+    
 CSS=r'''<style>
 :root{--bg:#0d0f12;--panel:#171a1f;--panel2:#111419;--line:#2b3037;--text:#f3efe5;--muted:#a6a198;--gold:#d8b46a;--gold2:#f0d28b;--green:#6bc28c;--red:#e47d76;--blue:#78a6d8}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(216,180,106,.1),transparent 30%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.container{width:min(1500px,94%);margin:auto;padding:24px 0 60px}.topbar{position:sticky;top:0;z-index:30;background:rgba(13,15,18,.93);backdrop-filter:blur(12px);border-bottom:1px solid rgba(216,180,106,.15)}.nav{width:min(1500px,94%);min-height:64px;margin:auto;display:flex;align-items:center;gap:22px}.brand{font-weight:850;white-space:nowrap}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}.navlinks{display:flex;gap:3px;overflow:auto}.navlinks a{color:#aaa69e;text-decoration:none;padding:9px 14px;border-radius:9px;font-size:13px;font-weight:750;white-space:nowrap}.navlinks a:hover,.navlinks a.active{color:var(--gold2);background:rgba(216,180,106,.1)}.hero{padding:34px 36px;border:1px solid rgba(216,180,106,.2);border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#111419;box-shadow:0 18px 50px rgba(0,0,0,.2);margin:22px 0}.eyebrow{font-size:10px;font-weight:850;letter-spacing:2.5px;color:var(--gold)}h1{margin:8px 0;font-size:clamp(28px,4vw,42px)}.hero p{margin:0;color:var(--muted);font-size:13px}.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:15px;padding:19px;margin-bottom:17px}.filters{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.filter label{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:6px}input,select{width:100%;height:41px;border:1px solid #353a42;border-radius:9px;background:#101318;color:var(--text);padding:0 10px;outline:none}input:focus,select:focus{border-color:var(--gold)}button{border:1px solid rgba(216,180,106,.35);background:linear-gradient(135deg,#a67b35,#d8b46a);color:#17130b;height:40px;border-radius:9px;padding:0 14px;font-weight:850;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:17px}.stat{background:#15181d;border:1px solid var(--line);border-radius:13px;padding:16px}.stat .label{font-size:10px;color:var(--muted)}.stat .value{font-size:25px;font-weight:850;margin-top:5px}.gold{color:var(--gold2)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.section-head h2{margin:0;font-size:17px}.muted{font-size:11px;color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{width:100%;border-collapse:collapse}th{background:#111419;color:#aaa69f;font-size:10px;padding:11px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}td{font-size:12px;padding:11px;border-bottom:1px solid rgba(43,48,55,.7);white-space:nowrap}tbody tr:hover td{background:rgba(216,180,106,.035)}.drama-link{border:0;background:none;color:var(--text);padding:0;height:auto;font-weight:750}.drama-link:hover{color:var(--gold2)}.id-text{color:#98948d;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-flex;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.badge.gold{color:var(--gold2);background:rgba(216,180,106,.1)}.badge.green{color:var(--green);background:rgba(107,194,140,.09)}.badge.red{color:var(--red);background:rgba(228,125,118,.09)}.badge.blue{color:var(--blue);background:rgba(120,166,216,.09)}.badge.gray{color:#aaa69f;background:rgba(170,166,159,.08)}.detail-title{font-size:30px;font-weight:900}.score-value{color:var(--gold2);font-weight:900}.detail-id{margin-top:6px;color:var(--gold);font:12px ui-monospace,monospace}.lifecycle-score{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:stretch;margin-bottom:17px}.score-main{background:linear-gradient(145deg,#fffdf7,#fff);border:1px solid #e2d2a9;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}.score-main .score-label{font-size:12px;color:#7b8490;font-weight:800}.score-main .score-number{font-size:42px;line-height:1.05;font-weight:900;color:#a67b35;margin-top:8px}.score-main .score-sub{font-size:11px;color:#7b8490;margin-top:7px}.score-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.score-metric{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:12px 14px}.score-metric .label{font-size:10px;color:#7b8490}.score-metric .value{font-size:16px;font-weight:850;color:#20252b;margin-top:5px}.score-metric .value.gold{color:#a67b35}.info-grid>.lifecycle-score{grid-column:1/-1}
