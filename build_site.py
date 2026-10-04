@@ -202,7 +202,7 @@ def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
     top3_days=int((x["排名"]<=3).sum());top10_days=int((x["排名"]<=10).sum());top20_days=int((x["排名"]<=20).sum())
     top3_rate=top3_days/total_days if total_days else 0;top10_rate=top10_days/total_days if total_days else 0;top20_rate=top20_days/total_days if total_days else 0
     rank_points=int((rank_limit+1-x["排名"]).sum());avg_daily_points=rank_points/days if days else 0
-    score=100*(0.30*days_rate+0.50*rank_quality+0.14*top10_rate+0.06*top20_rate)
+    score = 100 * ( 0.30 * days_rate + 0.50 * rank_quality + 0.08 * top3_rate + 0.08 * top10_rate + 0.04 * top20_rate )
     return {"score":round(score,2),"days":days,"total_days":total_days,"days_rate":round(days_rate,4),"avg_rank":round(float(x["排名"].mean()),2),"best_rank":int(x["排名"].min()),"top3_days":top3_days,"top10_days":top10_days,"top20_days":top20_days,"top3_rate":round(top3_rate,4),"top10_rate":round(top10_rate,4),"top20_rate":round(top20_rate,4),"rank_quality":round(rank_quality,4),"rank_points":rank_points,"avg_daily_points":round(avg_daily_points,1)}
 
 
