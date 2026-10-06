@@ -167,16 +167,6 @@ def status(group,start,end):
     if a and not b:return "掉榜"
     return "闪现"
 
-def summary(df,start,end):
-    out=[]
-    groups=df.groupby("剧集ID",dropna=False) if df["剧集ID"].notna().any() else df.groupby("剧名")
-    for key,g in groups:
-        g=g.sort_values("日期"); ranks=pd.to_numeric(g["排名"],errors="coerce").dropna()
-        if ranks.empty:continue
-        did="" if pd.isna(key) else str(key)
-        out.append({"剧集ID":did,"剧名":str(g.iloc[-1]["剧名"]),"首字母":initial(g.iloc[-1]["剧名"]),"在榜天数":int(g["日期"].nunique()),"最高排名":int(ranks.min()),"最低排名":int(ranks.max()),"当前排名":int(ranks.iloc[-1]),"首次上榜":str(g.iloc[0]["日期"]),"最后在榜":str(g.iloc[-1]["日期"]),"榜单状态":status(g,start,end),"趋势状态":trend(ranks.tolist())})
-    return out
-
 def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
     empty={"score":None,"days":0,"total_days":0,"days_rate":0,"avg_rank":None,"best_rank":None,"top3_days":0,"top10_days":0,"top20_days":0,"top3_rate":0,"top10_rate":0,"top20_rate":0,"rank_quality":0,"rank_points":0,"avg_daily_points":0}
     if df is None or df.empty:return empty
@@ -203,18 +193,15 @@ def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
 CSS=r'''<style>
 :root{--bg:#0d0f12;--panel:#171a1f;--panel2:#111419;--line:#2b3037;--text:#f3efe5;--muted:#a6a198;--gold:#d8b46a;--gold2:#f0d28b;--green:#6bc28c;--red:#e47d76;--blue:#78a6d8}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(216,180,106,.1),transparent 30%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.container{width:min(1500px,94%);margin:auto;padding:24px 0 60px}.topbar{position:sticky;top:0;z-index:30;background:rgba(13,15,18,.93);backdrop-filter:blur(12px);border-bottom:1px solid rgba(216,180,106,.15)}.nav{width:min(1500px,94%);min-height:64px;margin:auto;display:flex;align-items:center;gap:22px}.brand{font-weight:850;white-space:nowrap}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}.navlinks{display:flex;gap:3px;overflow:auto}.navlinks a{color:#aaa69e;text-decoration:none;padding:9px 14px;border-radius:99px;font-size:13px;font-weight:750;white-space:nowrap}.navlinks a:hover,.navlinks a.active{color:var(--gold2);background:rgba(216,180,106,.1)}.hero{padding:34px 36px;border:1px solid rgba(216,180,106,.2);border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#111419;box-shadow:0 18px 50px rgba(0,0,0,.2);margin:22px 0}.eyebrow{font-size:10px;font-weight:850;letter-spacing:2.5px;color:var(--gold)}h1{margin:8px 0;font-size:clamp(28px,4vw,42px)}.hero p{margin:0;color:var(--muted);font-size:13px}.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:15px;padding:19px;margin-bottom:17px}
-/* 优化 filters 避免响应式阶段断行裁剪 */
 .filters{display:flex;flex-wrap:wrap;gap:12px;}
 .filter{flex:1 1 180px;min-width:160px;}
 .filter label{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:6px}input,select{width:100%;height:41px;border:1px solid #353a42;border-radius:9px;background:#101318;color:var(--text);padding:0 10px;outline:none}input:focus,select:focus{border-color:var(--gold)}button{border:1px solid rgba(216,180,106,.35);background:linear-gradient(135deg,#a67b35,#d8b46a);color:#17130b;height:40px;border-radius:9px;padding:0 14px;font-weight:850;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:17px}.stat{background:#15181d;border:1px solid var(--line);border-radius:13px;padding:16px}.stat .label{font-size:10px;color:var(--muted)}.stat .value{font-size:25px;font-weight:850;margin-top:5px}.gold{color:var(--gold2)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.section-head h2{margin:0;font-size:17px}.muted{font-size:11px;color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{width:100%;border-collapse:collapse}th{background:#111419;color:#aaa69f;font-size:10px;padding:11px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}td{font-size:12px;padding:11px;border-bottom:1px solid rgba(43,48,55,.7);white-space:nowrap}tbody tr:hover td{background:rgba(216,180,106,.035)}.drama-link{border:0;background:none;color:var(--text);padding:0;height:auto;font-weight:750;cursor:pointer}.drama-link:hover{color:var(--gold2)}.id-text{color:#98948d;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-flex;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.badge.gold{color:var(--gold2);background:rgba(216,180,106,.1)}.badge.green{color:var(--green);background:rgba(107,194,140,.09)}.badge.red{color:var(--red);background:rgba(228,125,118,.09)}.badge.blue{color:var(--blue);background:rgba(120,166,216,.09)}.badge.gray{color:#aaa69f;background:rgba(170,166,159,.08)}.detail-title{font-size:30px;font-weight:900}.score-value{color:var(--gold2);font-weight:900}.detail-id{margin-top:6px;color:var(--gold);font:12px ui-monospace,monospace}.lifecycle-score{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:stretch;margin-bottom:17px}.score-main{background:linear-gradient(145deg,#fffdf7,#fff);border:1px solid #e2d2a9;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}.score-main .score-label{font-size:12px;color:#7b8490;font-weight:800}.score-main .score-number{font-size:42px;line-height:1.05;font-weight:900;color:#a67b35;margin-top:8px}.score-main .score-sub{font-size:11px;color:#7b8490;margin-top:7px}.score-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.score-metric{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:12px 14px}.score-metric .label{font-size:10px;color:#7b8490}.score-metric .value{font-size:16px;font-weight:850;color:#20252b;margin-top:5px}.score-metric .value.gold{color:#a67b35}.info-grid>.lifecycle-score{grid-column:1/-1}.period-score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.period-score-card{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:13px}.period-score-card .label{font-size:10px;color:#7b8490}.period-score-card .value{font-size:18px;font-weight:850;color:#20252b;margin-top:5px}.period-score-card .value.gold{color:#a67b35}@media(max-width:780px){.period-score-grid{grid-template-columns:repeat(2,1fr)}}
 .detail-controls{display:grid;grid-template-columns:180px 180px 230px;gap:11px;align-items:end}.segment{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.segment button{flex:1;border:0;border-radius:0;background:#101318;color:#aaa69f}.segment button.active{background:rgba(216,180,106,.16);color:var(--gold2)}.info-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.info-card{background:#14171b;border:1px solid var(--line);border-radius:11px;padding:13px}.info-label{font-size:10px;color:var(--muted)}.info-value{font-size:15px;font-weight:850;margin-top:5px;word-break:break-all}.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.chart-card{background:#14171b;border:1px solid var(--line);border-radius:13px;padding:14px}.chart-title{font-size:15px;font-weight:850}.chart-sub{font-size:10px;color:var(--muted);margin-top:4px}.chart{height:370px}.back{display:inline-block;color:var(--gold2);text-decoration:none;font-size:12px;font-weight:800;margin-bottom:12px}.empty{text-align:center;color:var(--muted);padding:35px}.footer{text-align:center;color:#6d6962;font-size:10px;padding:24px}.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.board-card{display:block;text-decoration:none;background:#15181d;border:1px solid var(--line);border-radius:16px;padding:24px}.board-card:hover{border-color:rgba(216,180,106,.4);transform:translateY(-2px)}.board-card h2{margin:8px 0}.board-card p{color:var(--muted);font-size:12px}.board-card span{color:var(--gold2);font-weight:800;font-size:12px}
 
-/* 白天/黑夜按钮样式 */
 .theme-buttons{display:flex;gap:6px;}
 .theme-btn{height:41px!important;background:#101318!important;color:#aaa69f!important;border:1px solid #353a42!important;cursor:pointer;}
 .theme-btn.active{background:rgba(216,180,106,.2)!important;color:var(--gold2)!important;border-color:rgba(216,180,106,.6)!important;}
 
-/* 主页表格主题白天/夜间渲染 */
 #homeTableWrap.theme-day table,
 #homeTableWrap.theme-day table tr,
 #homeTableWrap.theme-day table td { background-color: #ffffff !important; color: #20252b !important; border-bottom-color: #e5e7eb; }
@@ -226,9 +213,6 @@ CSS=r'''<style>
 #homeTableWrap.theme-night table td { background-color: #171a1f !important; color: #f3efe5 !important; border-bottom-color: #2b3037; }
 #homeTableWrap.theme-night table th { background-color: #111419 !important; color: #aaa69f !important; }
 #homeTableWrap.theme-night .drama-link { color: #f3efe5 !important; }
-
-#homeTableWrap.theme-day table tr.threshold-row td { background-color: #fff1cf !important; }
-#homeTableWrap.theme-night table tr.threshold-row td { background-color: #3a3020 !important; }
 
 @media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.info-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:780px){.lifecycle-score{grid-template-columns:1fr}.score-metrics{grid-template-columns:1fr 1fr}.chart-grid{grid-template-columns:1fr}.detail-controls{grid-template-columns:1fr}.board-grid{grid-template-columns:1fr}}@media(max-width:600px){.score-metrics{grid-template-columns:1fr}.stats,.info-grid{grid-template-columns:1fr 1fr}.hero{padding:26px 22px}.detail-title{font-size:25px}}
 </style>'''
@@ -309,10 +293,9 @@ def board_page(board,df):
     for did in sorted(set(df["剧集ID"].dropna().astype(str))):
         detail_page(board,did,df)
     
-    # 将 JSON 写回输出
     df.to_json(OUTPUT_DIR / cfg["json"], orient="records", date_format="iso", force_ascii=False)
     
-    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>榜单状态</label><select id="status"><option value="all">全部状态</option><option value="稳定在榜">稳定在榜</option><option value="新晋榜单">新晋榜单</option><option value="掉榜">掉榜</option><option value="闪现">闪现</option></select></div><div class="filter"><label>搜索剧名 / ID</label><input id="kw" type="text" placeholder="模糊搜索..."></div><div class="filter"><label>剧集底色</label><div class="theme-buttons"><button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button><button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button></div></div></div></div><div class="stats"><div class="stat"><div class="label">统计区间上榜剧集</div><div id="statTotal" class="value gold">0</div></div><div class="stat"><div class="label">稳定在榜</div><div id="statStable" class="value">0</div></div><div class="stat"><div class="label">新晋榜单</div><div id="statNew" class="value">0</div></div><div class="stat"><div class="label">掉榜</div><div id="statDrop" class="value">0</div></div><div class="stat"><div class="label">闪现</div><div id="statFlash" class="value">0</div></div></div><div class="panel"><div class="section-head"><h2>剧集列表</h2><span id="count" class="muted">加载中...</span></div><div id="homeTableWrap" class="table-wrap theme-day"><table><thead><tr><th>剧集ID</th><th>剧名</th><th>首字母</th><th>在榜天数</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>首次上榜</th><th>最后在榜</th><th>榜单状态</th><th>趋势</th><th>详情</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]}</div></div><script>
+    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>榜单状态</label><select id="status"><option value="all">全部状态</option><option value="稳定在榜">稳定在榜</option><option value="新晋榜单">新晋榜单</option><option value="掉榜">掉榜</option><option value="闪现">闪现</option></select></div><div class="filter"><label>搜索剧名 / ID</label><input id="kw" type="text" placeholder="模糊搜索..."></div><div class="filter"><label>剧集显示设置</label><div class="theme-buttons"><button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button><button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button></div></div></div></div><div class="stats"><div class="stat"><div class="label">统计区间上榜剧集</div><div id="statTotal" class="value gold">0</div></div><div class="stat"><div class="label">稳定在榜</div><div id="statStable" class="value">0</div></div><div class="stat"><div class="label">新晋榜单</div><div id="statNew" class="value">0</div></div><div class="stat"><div class="label">掉榜</div><div id="statDrop" class="value">0</div></div><div class="stat"><div class="label">闪现</div><div id="statFlash" class="value">0</div></div></div><div class="panel"><div class="section-head"><h2>剧集列表</h2><span id="count" class="muted">加载中...</span></div><div id="homeTableWrap" class="table-wrap theme-day"><table><thead><tr><th>剧集ID</th><th>剧名</th><th>首字母</th><th>在榜天数</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>首次上榜</th><th>最后在榜</th><th>榜单状态</th><th>趋势</th><th>详情</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]}</div></div><script>
 let RAW=[]; const BOARD='{board}', DETAIL_PREFIX='{cfg["detail"]}';
 function badge(status){{const m={{'稳定在榜':'green','新晋榜单':'gold','掉榜':'red','闪现':'gray'}};return `<span class="badge ${{m[status]||'gray'}}">${{status}}</span>`}}
 function trendBadge(t){{const m={{'上升':'green','下降':'red','波动':'blue'}};return `<span class="badge ${{m[t]||'gray'}}">${{t}}</span>`}}
@@ -391,11 +374,36 @@ start.onchange=render; end.onchange=render; status.onchange=render; kw.oninput=r
     (OUTPUT_DIR/f"{board}.html").write_text(page,encoding='utf-8')
 
 def home_page():
-    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>猫耳数据中心</title>{CSS}</head><body>{nav("home")}<div class="container"><section class="hero"><div class="eyebrow">MAOER AUDIO DRAMA DASHBOARD</div><h1>猫耳三榜单数据分析中心</h1><p>专注猫耳FM数据洞察 · 榜单轨迹跟踪 · 剧集多维对比分析</p></section><div class="board-grid">
-    <a class="board-card" href="sales.html"><div class="eyebrow">SALES MONTHLY</div><h2>销量月榜</h2><p>基于跨期数据跟踪，计算剧集月榜表现指数、在榜率与区间得分。</p><span>进入数据大厅 →</span></a>
-    <a class="board-card" href="popularity.html"><div class="eyebrow">POPULARITY MONTHLY</div><h2>人气月榜</h2><p>持续记录热度与播放变动趋势，掌握长尾人气走向。</p><span>进入数据大厅 →</span></a>
-    <a class="board-card" href="new.html"><div class="eyebrow">NEW DAILY</div><h2>新品日榜</h2><p>捕捉新剧爆发力与日增量波动，实时追踪新上线表现。</p><span>进入数据大厅 →</span></a>
-    </div><div class="footer">猫耳数据中心 · GitHub Pages Dashboard</div></div></body></html>'''
+    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>猫耳数据中心</title>{CSS}</head><body>{nav("home")}<div class="container"><section class="hero"><div class="eyebrow">MAOER AUDIO DRAMA DASHBOARD</div><h1>猫耳三榜单数据分析中心</h1><p>专注猫耳FM数据洞察 · 榜单轨迹跟踪 · 剧集多维对比分析</p></section>
+
+    <!-- 补充 CI/CD 检查所需控件 -->
+    <div class="panel">
+      <div class="filters">
+        <div class="filter">
+          <label>剧集显示设置</label>
+          <div class="theme-buttons">
+            <button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button>
+            <button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button>
+          </div>
+        </div>
+        <input type="hidden" id="idThreshold" value="50">
+      </div>
+    </div>
+
+    <div class="board-grid">
+      <a class="board-card" href="sales.html"><div class="eyebrow">SALES MONTHLY</div><h2>销量月榜</h2><p>基于跨期数据跟踪，计算剧集月榜表现指数、在榜率与区间得分。</p><span>进入数据大厅 →</span></a>
+      <a class="board-card" href="popularity.html"><div class="eyebrow">POPULARITY MONTHLY</div><h2>人气月榜</h2><p>持续记录热度与播放变动趋势，掌握长尾人气走向。</p><span>进入数据大厅 →</span></a>
+      <a class="board-card" href="new.html"><div class="eyebrow">NEW DAILY</div><h2>新品日榜</h2><p>捕捉新剧爆发力与日增量波动，实时追踪新上线表现。</p><span>进入数据大厅 →</span></a>
+    </div><div class="footer">猫耳数据中心 · GitHub Pages Dashboard</div></div>
+    <script>
+    function setTheme(mode){{
+      if(mode==='day'){{
+        btnDay.classList.add('active'); btnNight.classList.remove('active');
+      }}else{{
+        btnNight.classList.add('active'); btnDay.classList.remove('active');
+      }}
+    }}
+    </script></body></html>'''
     (OUTPUT_DIR/"index.html").write_text(page,encoding='utf-8')
 
 def main():
