@@ -204,7 +204,6 @@ PLOTLY='<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>'
 def nav(active):
     links=[]
     for k,c in BOARDS.items():
-        # 默认首页就是销量月榜 (sales)
         target_href = "index.html" if k == "sales" else f"{k}.html"
         links.append(f'<a class="{"active" if k==active else ""}" href="{target_href}">{c["label"]}</a>')
     return f'<div class="topbar"><div class="nav"><div class="brand">猫耳数据中心<small>MAOER · AUDIO DRAMA</small></div><div class="navlinks">{"".join(links)}</div></div></div>'
@@ -262,13 +261,14 @@ def detail_page(board,did,df):
 
     template="""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>__TITLE__</title>__PLOTLY____CSS__<style>.detail-page{background:#f4f6f8;color:#20252b}.detail-page .container{padding-top:18px}.detail-page .hero{background:linear-gradient(135deg,#121417,#24272c);border-color:#3a3d42;box-shadow:0 10px 30px rgba(0,0,0,.12)}.detail-page .detail-title{color:#C5A059;font-weight:800;}.detail-page .panel,.detail-page .chart-card,.detail-page .info-card{background:#fff;border:1px solid #dfe3e8;box-shadow:0 4px 16px rgba(31,41,55,.05)}.detail-page .panel{color:#20252b}.detail-page .section-head h2,.detail-page .chart-title{color:#20252b}.detail-page .muted,.detail-page .chart-sub,.detail-page .info-label{color:#7b8490}.detail-page .info-value{color:#20252b}.detail-page input,.detail-page select{background:#fff;color:#20252b;border-color:#cfd5dc}.detail-page input:focus,.detail-page select:focus{border-color:#7aa7d9}.detail-page .segment{border-color:#cfd5dc}.detail-page .segment button{background:#f5f7f9;color:#68727d}.detail-page .segment button.active{background:#e7eef7;color:#315f91}.detail-page .table-wrap{border-color:#dfe3e8}.detail-page th{background:#f0f3f6;color:#5d6670;border-color:#dfe3e8}.detail-page td{color:#30363d;border-color:#edf0f3}.detail-page tbody tr:hover td{background:#f7f9fb}.detail-page .back{color:#496f9e}.detail-page .footer{color:#8a929c}</style></head><body class="detail-page">__NAV__<div class="container"><a class="back" href="__BACK_TARGET__">← 返回__LABEL__</a><section class="hero"><div class="eyebrow">__LABEL__ · DRAMA DETAIL</div><div class="detail-title">__NAME__</div><div class="detail-id">ID · __ID__</div><p>历史数据：__FIRST__ → __LAST__ · 综合评分按整个生命周期计算</p></section><div class="panel"><div class="section-head"><h2>时间与增量</h2><span class="muted">短缺口只在图表中插值</span></div><div class="detail-controls"><div class="filter"><label>开始日期</label><input id="start" type="date" min="__FIRST__" max="__LAST__" value="__FIRST__"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="__FIRST__" max="__LAST__" value="__LAST__"></div><div><label style="display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:6px">增量方式</label><div class="segment"><button id="b7" class="active" onclick="setMode(7)">7日增量</button><button id="b1" onclick="setMode(1)">单日增量</button></div></div></div></div>__PERIOD_SCORE__<div class="panel"><div class="info-grid">__CARDS__</div></div><div class="chart-grid">__CHARTS__</div><div class="panel"><div class="section-head"><h2>每日详细数据</h2><span id="range" class="muted">__FIRST__ → __LAST__</span></div><div class="table-wrap"><table><thead><tr>__HEADERS__</tr></thead><tbody id="table">__ROWS__</tbody></table></div></div><div class="footer">猫耳数据中心 · __LABEL__</div></div><script>
 const DATA=__DATA__;const MAP=__MAP__;const COLS=__COLS__;let MODE=7;
+const startEl=document.getElementById('start'), endEl=document.getElementById('end');
 function num(v){const n=Number(v);return Number.isFinite(n)?n:null}
 function setMode(x){MODE=x;b7.classList.toggle('active',x===7);b1.classList.toggle('active',x===1);render()}
 function series(rows,key,gap){if(!key)return[];const mp=new Map();rows.forEach(r=>mp.set(r.日期,num(r[key])));const ds=[...mp.keys()].sort();if(!ds.length)return[];let a=[],d=new Date(ds[0]+'T00:00:00'),e=new Date(ds[ds.length-1]+'T00:00:00');for(;d<=e;d.setDate(d.getDate()+1)){const x=d.toISOString().slice(0,10);a.push({date:x,v:mp.has(x)?mp.get(x):null,est:false})}for(let i=0;i<a.length;i++)if(a[i].v===null){let l=i-1,r=i+1;while(l>=0&&a[l].v===null)l--;while(r<a.length&&a[r].v===null)r++;if(l>=0&&r<a.length&&r-l-1<=gap){a[i].v=a[l].v+(a[r].v-a[l].v)*(i-l)/(r-l);a[i].est=true}}return a}
 function metric(id,title,rows,key){if(!key)return;const a=series(rows,key,3),x=a.map(z=>z.date),y=a.map(z=>z.v),delta=y.map((v,i)=>i>=MODE&&v!=null&&y[i-MODE]!=null?v-y[i-MODE]:null),real=a.filter(z=>z.v!=null&&!z.est),est=a.filter(z=>z.v!=null&&z.est),dn=MODE===7?'7日增量':'单日增量';Plotly.react(id,[{x,y:delta,type:'bar',name:dn,yaxis:'y2',opacity:.42},{x,y,type:'scatter',mode:'lines',name:'累计值',line:{width:2.8}},{x:real.map(z=>z.date),y:real.map(z=>z.v),type:'scatter',mode:'markers',name:'原始',marker:{size:5}},{x:est.map(z=>z.date),y:est.map(z=>z.v),type:'scatter',mode:'markers',name:'插值',marker:{size:7,symbol:'diamond'}}],{margin:{l:55,r:60,t:12,b:45},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',hovermode:'x unified',legend:{orientation:'h'},xaxis:{type:'date'},yaxis:{title:title,gridcolor:'rgba(216,180,106,.1)'},yaxis2:{title:dn,overlaying:'y',side:'right'}},{responsive:true,displaylogo:false})}
 function rank(rows){const a=series(rows,MAP.rank,1),x=a.map(z=>z.date),y=a.map(z=>z.v),r=a.filter(z=>z.v!=null&&!z.est),e=a.filter(z=>z.v!=null&&z.est);Plotly.react('chart_rank',[{x,y,type:'scatter',mode:'lines',name:'排名',line:{width:2.8}},{x:r.map(z=>z.date),y:r.map(z=>z.v),type:'scatter',mode:'markers',name:'原始'},{x:e.map(z=>z.date),y:e.map(z=>z.v),type:'scatter',mode:'markers',name:'插值',marker:{symbol:'diamond'}}],{margin:{l:55,r:25,t:12,b:45},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',hovermode:'x unified',legend:{orientation:'h'},xaxis:{type:'date'},yaxis:{title:'排名',autorange:'reversed',dtick:5,gridcolor:'rgba(216,180,106,.1)'}},{responsive:true,displaylogo:false})}
-function updatePeriodScore(rows,s,e){if(!document.getElementById('periodScore'))return;const total=(new Date(e+'T00:00:00')-new Date(s+'T00:00:00'))/86400000+1;const vals=rows.map(r=>Number(r[MAP.rank])).filter(v=>Number.isFinite(v)&&v>=1&&v<=50);const unique=new Map();rows.forEach(r=>{const v=Number(r[MAP.rank]);if(r.日期&&Number.isFinite(v)&&v>=1&&v<=50&&(!unique.has(r.日期)||v<unique.get(r.日期)))unique.set(r.日期,v)});const ranks=[...unique.values()];const days=ranks.length;const points=ranks.reduce((a,v)=>a+(51-v),0);const avg=ranks.length?ranks.reduce((a,v)=>a+v,0)/ranks.length:null;const best=ranks.length?Math.min(...ranks):null;const worst=ranks.length?Math.max(...ranks):null;const t3=ranks.filter(v=>v<=3).length,t10=ranks.filter(v=>v<=10).length,t20=ranks.filter(v=>v<=20).length;const quality=days?ranks.reduce((a,v)=>a+(51-v)/50,0)/days:0;const score=days&&total>0?100*(.30*(days/total)+.50*quality+.08*(t3/total)+.08*(t10/total)+.04*(t20/total)):null;periodRange.textContent=s+' → '+e;periodScore.textContent=score==null?'—':score.toFixed(2);periodDays.textContent=days+' / '+total;periodAvgRank.textContent=avg==null?'—':avg.toFixed(2);periodBestRank.textContent=best==null?'—':'#'+best;periodWorstRank.textContent=worst==null?'—':'#'+worst;periodTop3.textContent=t3;periodTop10.textContent=t10;periodTop20.textContent=t20;periodPoints.textContent=points.toLocaleString();periodAvgPoints.textContent=days?(points/days).toFixed(1):'—'}function render(){const s=start.value,e=end.value;if(s>e){alert('开始日期不能晚于结束日期');return}const rows=DATA.filter(r=>r.日期>=s&&r.日期<=e);updatePeriodScore(rows,s,e);range.textContent=s+' → '+e;table.innerHTML=rows.length?rows.map(r=>'<tr>'+COLS.map(c=>'<td>'+((r[c]??'')===''?'--':r[c])+'</td>').join('')+'</tr>').join(''):'<tr><td class="empty" colspan="20">该时间段没有数据</td></tr>';rank(rows);metric('chart_play','播放量',rows,MAP.play);metric('chart_subscribe','订阅数',rows,MAP.subscribe);metric('chart_total_id','全部弹幕 UID',rows,MAP.total_id);metric('chart_paid_id','付费弹幕 UID',rows,MAP.paid_id)}
-start.onchange=render;end.onchange=render;document.addEventListener('DOMContentLoaded',render);
+function updatePeriodScore(rows,s,e){if(!document.getElementById('periodScore'))return;const total=(new Date(e+'T00:00:00')-new Date(s+'T00:00:00'))/86400000+1;const vals=rows.map(r=>Number(r[MAP.rank])).filter(v=>Number.isFinite(v)&&v>=1&&v<=50);const unique=new Map();rows.forEach(r=>{const v=Number(r[MAP.rank]);if(r.日期&&Number.isFinite(v)&&v>=1&&v<=50&&(!unique.has(r.日期)||v<unique.get(r.日期)))unique.set(r.日期,v)});const ranks=[...unique.values()];const days=ranks.length;const points=ranks.reduce((a,v)=>a+(51-v),0);const avg=ranks.length?ranks.reduce((a,v)=>a+v,0)/ranks.length:null;const best=ranks.length?Math.min(...ranks):null;const worst=ranks.length?Math.max(...ranks):null;const t3=ranks.filter(v=>v<=3).length,t10=ranks.filter(v=>v<=10).length,t20=ranks.filter(v=>v<=20).length;const quality=days?ranks.reduce((a,v)=>a+(51-v)/50,0)/days:0;const score=days&&total>0?100*(.30*(days/total)+.50*quality+.08*(t3/total)+.08*(t10/total)+.04*(t20/total)):null;periodRange.textContent=s+' → '+e;periodScore.textContent=score==null?'—':score.toFixed(2);periodDays.textContent=days+' / '+total;periodAvgRank.textContent=avg==null?'—':avg.toFixed(2);periodBestRank.textContent=best==null?'—':'#'+best;periodWorstRank.textContent=worst==null?'—':'#'+worst;periodTop3.textContent=t3;periodTop10.textContent=t10;periodTop20.textContent=t20;periodPoints.textContent=points.toLocaleString();periodAvgPoints.textContent=days?(points/days).toFixed(1):'—'}function render(){const s=startEl.value,e=endEl.value;if(s>e){alert('开始日期不能晚于结束日期');return}const rows=DATA.filter(r=>r.日期>=s&&r.日期<=e);updatePeriodScore(rows,s,e);range.textContent=s+' → '+e;table.innerHTML=rows.length?rows.map(r=>'<tr>'+COLS.map(c=>'<td>'+((r[c]??'')===''?'--':r[c])+'</td>').join('')+'</tr>').join(''):'<tr><td class="empty" colspan="20">该时间段没有数据</td></tr>';rank(rows);metric('chart_play','播放量',rows,MAP.play);metric('chart_subscribe','订阅数',rows,MAP.subscribe);metric('chart_total_id','全部弹幕 UID',rows,MAP.total_id);metric('chart_paid_id','付费弹幕 UID',rows,MAP.paid_id)}
+startEl.onchange=render;endEl.onchange=render;document.addEventListener('DOMContentLoaded',render);
 </script></body></html>"""
     repl={"__TITLE__":html.escape(name)+" · "+cfg["label"],"__PLOTLY__":PLOTLY,"__CSS__":CSS,"__NAV__":nav(board),"__BACK_TARGET__":back_target,"__LABEL__":cfg["label"],"__NAME__":html.escape(name),"__ID__":html.escape(str(did)),"__FIRST__":first,"__LAST__":last,"__CARDS__":''.join(cards),"__PERIOD_SCORE__":period_score_markup,"__CHARTS__":charts,"__HEADERS__":''.join('<th>'+html.escape(c)+'</th>' for c in cols),"__ROWS__":rows,"__DATA__":data,"__MAP__":mapping,"__COLS__":cols_json}
     for k,v in repl.items():template=template.replace(k,str(v))
@@ -279,13 +279,12 @@ def board_page(board,df):
     for did in sorted(set(df["剧集ID"].dropna().astype(str))):
         detail_page(board,did,df)
     
-    # 导出一个 json 供外部调用
     df.to_json(OUTPUT_DIR / cfg["json"], orient="records", date_format="iso", force_ascii=False)
     
-    # 直接将数据转为 JSON 字符串内嵌到 JavaScript 变量中，避免异步 fetch 加载失败
+    # 将 JSON 规范地转义并内嵌
     data_json = json.dumps(records(df), ensure_ascii=False, separators=(',', ':'))
 
-    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>榜单状态</label><select id="status"><option value="all">全部状态</option><option value="稳定在榜">稳定在榜</option><option value="新晋榜单">新晋榜单</option><option value="掉榜">掉榜</option><option value="闪现">闪现</option></select></div><div class="filter"><label>搜索剧名 / ID</label><input id="kw" type="text" placeholder="模糊搜索..."></div><div class="filter"><label>剧集显示设置</label><div class="theme-buttons"><button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button><button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button></div><input type="hidden" id="idThreshold" value="50"></div></div></div><div class="stats"><div class="stat"><div class="label">统计区间上榜剧集</div><div id="statTotal" class="value gold">0</div></div><div class="stat"><div class="label">稳定在榜</div><div id="statStable" class="value">0</div></div><div class="stat"><div class="label">新晋榜单</div><div id="statNew" class="value">0</div></div><div class="stat"><div class="label">掉榜</div><div id="statDrop" class="value">0</div></div><div class="stat"><div class="label">闪现</div><div id="statFlash" class="value">0</div></div></div><div class="panel"><div class="section-head"><h2>剧集列表</h2><span id="count" class="muted">加载中...</span></div><div id="homeTableWrap" class="table-wrap theme-day"><table><thead><tr><th>剧集ID</th><th>剧名</th><th>首字母</th><th>在榜天数</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>首次上榜</th><th>最后在榜</th><th>榜单状态</th><th>趋势</th><th>详情</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]}</div></div><script>
+    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>榜单状态</label><select id="status"><option value="all">全部状态</option><option value="稳定在榜">稳定在榜</option><option value="新晋榜单">新晋榜单</option><option value="掉榜">掉榜</option><option value="闪现">闪现</option></select></div><div class="filter"><label>搜索剧名 / ID</label><input id="kw" type="text" placeholder="模糊搜索..."></div><div class="filter"><label>剧集显示设置</label><div class="theme-buttons"><button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button><button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button></div></div></div></div><div class="stats"><div class="stat"><div class="label">统计区间上榜剧集</div><div id="statTotal" class="value gold">0</div></div><div class="stat"><div class="label">稳定在榜</div><div id="statStable" class="value">0</div></div><div class="stat"><div class="label">新晋榜单</div><div id="statNew" class="value">0</div></div><div class="stat"><div class="label">掉榜</div><div id="statDrop" class="value">0</div></div><div class="stat"><div class="label">闪现</div><div id="statFlash" class="value">0</div></div></div><div class="panel"><div class="section-head"><h2>剧集列表</h2><span id="count" class="muted">加载中...</span></div><div id="homeTableWrap" class="table-wrap theme-day"><table><thead><tr><th>剧集ID</th><th>剧名</th><th>首字母</th><th>在榜天数</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>首次上榜</th><th>最后在榜</th><th>榜单状态</th><th>趋势</th><th>详情</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]}</div></div><script>
 const RAW = {data_json};
 const BOARD = '{board}', DETAIL_PREFIX = '{cfg["detail"]}';
 
@@ -293,6 +292,8 @@ function badge(status){{const m={{'稳定在榜':'green','新晋榜单':'gold','
 function trendBadge(t){{const m={{'上升':'green','下降':'red','波动':'blue'}};return `<span class="badge ${{m[t]||'gray'}}">${{t}}</span>`}}
 function setTheme(mode){{
   const wrap=document.getElementById('homeTableWrap');
+  const btnDay=document.getElementById('btnDay');
+  const btnNight=document.getElementById('btnNight');
   if(mode==='day'){{
     wrap.classList.remove('theme-night'); wrap.classList.add('theme-day');
     btnDay.classList.add('active'); btnNight.classList.remove('active');
@@ -302,27 +303,36 @@ function setTheme(mode){{
   }}
 }}
 function render(){{
-  const s=start.value, e=end.value, st=status.value, kw=kw.value.trim().toLowerCase();
-  if(s>e){{alert('开始日期不能晚于结束日期');return}}
-  const sub=RAW.filter(r=>r.日期>=s&&r.日期<=e);
-  const map=new Map();
-  sub.forEach(r=>{{
-    const key=r.剧集ID||r.剧名;
+  const startInput = document.getElementById('start');
+  const endInput = document.getElementById('end');
+  const statusSelect = document.getElementById('status');
+  const kwInput = document.getElementById('kw');
+
+  const s = startInput ? startInput.value : '';
+  const e = endInput ? endInput.value : '';
+  const st = statusSelect ? statusSelect.value : 'all';
+  const kw = kwInput ? kwInput.value.trim().toLowerCase() : '';
+
+  if(s && e && s > e){{alert('开始日期不能晚于结束日期');return}}
+  const sub = RAW.filter(r => r.日期 >= s && r.日期 <= e);
+  const map = new Map();
+  sub.forEach(r => {{
+    const key = r.剧集ID || r.剧名;
     if(!map.has(key)) map.set(key, []);
     map.get(key).push(r);
   }});
-  const list=[];
-  map.forEach((rows, key)=>{{
-    rows.sort((a,b)=>a.日期.localeCompare(b.日期));
-    const ranks=rows.map(r=>Number(r.排名)).filter(v=>!isNaN(v));
-    if(!ranks.length)return;
-    const last=rows[rows.length-1];
-    const ds=[...new Set(rows.map(r=>r.日期))];
-    const statusVal=(ds[0]===s && ds[ds.length-1]===e)?'稳定在榜':(ds[0]!==s && ds[ds.length-1]===e)?'新晋榜单':(ds[0]===s && ds[ds.length-1]!==e)?'掉榜':'闪现';
+  const list = [];
+  map.forEach((rows, key) => {{
+    rows.sort((a,b) => a.日期.localeCompare(b.日期));
+    const ranks = rows.map(r => Number(r.排名)).filter(v => !isNaN(v));
+    if(!ranks.length) return;
+    const last = rows[rows.length-1];
+    const ds = [...new Set(rows.map(r => r.日期))];
+    const statusVal = (ds[0]===s && ds[ds.length-1]===e) ? '稳定在榜' : (ds[0]!==s && ds[ds.length-1]===e) ? '新晋榜单' : (ds[0]===s && ds[ds.length-1]!==e) ? '掉榜' : '闪现';
     list.push({{
-      did: last.剧集ID||'',
+      did: last.剧集ID || '',
       name: last.剧名,
-      initial: last.首字母||'#',
+      initial: last.首字母 || '#',
       days: ds.length,
       best: Math.min(...ranks),
       worst: Math.max(...ranks),
@@ -330,23 +340,24 @@ function render(){{
       first: rows[0].日期,
       last: last.日期,
       status: statusVal,
-      trend: ranks.length<2||ranks[0]===ranks[ranks.length-1]?'波动':(ranks[ranks.length-1]<ranks[0]?'上升':'下降')
+      trend: ranks.length<2 || ranks[0]===ranks[ranks.length-1] ? '波动' : (ranks[ranks.length-1]<ranks[0] ? '上升' : '下降')
     }});
   }});
-  let filtered=list.filter(r=>{{
-    if(st!=='all' && r.status!==st) return false;
+  let filtered = list.filter(r => {{
+    if(st !== 'all' && r.status !== st) return false;
     if(kw && !r.name.toLowerCase().includes(kw) && !r.did.toLowerCase().includes(kw)) return false;
     return true;
   }});
-  filtered.sort((a,b)=>a.cur-b.cur);
-  statTotal.textContent=filtered.length;
-  statStable.textContent=filtered.filter(r=>r.status==='稳定在榜').length;
-  statNew.textContent=filtered.filter(r=>r.status==='新晋榜单').length;
-  statDrop.textContent=filtered.filter(r=>r.status==='掉榜').length;
-  statFlash.textContent=filtered.filter(r=>r.status==='闪现').length;
-  count.textContent=`共 ${{filtered.length}} 剧目`;
-  table.innerHTML=filtered.length?filtered.map(r=>`<tr>
-    <td class="id-text">${{r.did||'--'}}</td>
+  filtered.sort((a,b) => a.cur - b.cur);
+
+  document.getElementById('statTotal').textContent = filtered.length;
+  document.getElementById('statStable').textContent = filtered.filter(r => r.status==='稳定在榜').length;
+  document.getElementById('statNew').textContent = filtered.filter(r => r.status==='新晋榜单').length;
+  document.getElementById('statDrop').textContent = filtered.filter(r => r.status==='掉榜').length;
+  document.getElementById('statFlash').textContent = filtered.filter(r => r.status==='闪现').length;
+  document.getElementById('count').textContent = `共 ${{filtered.length}} 剧目`;
+  document.getElementById('table').innerHTML = filtered.length ? filtered.map(r => `<tr>
+    <td class="id-text">${{r.did || '--'}}</td>
     <td><a class="drama-link" href="${{DETAIL_PREFIX}}_${{(r.did||'').replace(/[^0-9A-Za-z_-]/g,'_')}}.html">${{r.name}}</a></td>
     <td>${{r.initial}}</td>
     <td>${{r.days}}</td>
@@ -358,17 +369,26 @@ function render(){{
     <td>${{badge(r.status)}}</td>
     <td>${{trendBadge(r.trend)}}</td>
     <td><a class="drama-link" href="${{DETAIL_PREFIX}}_${{(r.did||'').replace(/[^0-9A-Za-z_-]/g,'_')}}.html">查看详情</a></td>
-  </tr>`).join(''):'<tr><td class="empty" colspan="12">暂无符合条件的剧目数据</td></tr>';
+  </tr>`).join('') : '<tr><td class="empty" colspan="12">暂无符合条件的剧目数据</td></tr>';
 }}
 
-document.addEventListener('DOMContentLoaded', render);
-start.onchange=render; end.onchange=render; status.onchange=render; kw.oninput=render;
+document.addEventListener('DOMContentLoaded', () => {{
+  render();
+  const startInput = document.getElementById('start');
+  const endInput = document.getElementById('end');
+  const statusSelect = document.getElementById('status');
+  const kwInput = document.getElementById('kw');
+
+  if(startInput) startInput.onchange = render;
+  if(endInput) endInput.onchange = render;
+  if(statusSelect) statusSelect.onchange = render;
+  if(kwInput) kwInput.oninput = render;
+}});
 </script></body></html>'''
 
     output_filename = f"{board}.html"
     (OUTPUT_DIR / output_filename).write_text(page, encoding='utf-8')
     
-    # 如果是销量月榜，直接将其作为默认首页 index.html 输出
     if board == "sales":
         (OUTPUT_DIR / "index.html").write_text(page, encoding='utf-8')
 
