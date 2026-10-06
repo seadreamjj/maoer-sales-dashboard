@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """猫耳三榜单 GitHub Pages Dashboard。
-
 核心原则：以「榜单 + 剧集ID」识别剧目，不以剧名识别。
 """
 from __future__ import annotations
@@ -18,17 +17,15 @@ EXPORT_DIR = BASE_DIR / "exports"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-DEFAULT_DAYS = 30
 
+DEFAULT_DAYS = 30
 BOARDS = {
     "sales": {"label":"销量月榜", "prefix":"猫耳销量月榜", "json":"sales.json", "detail":"sales", "sales":True},
     "popularity": {"label":"人气月榜", "prefix":"猫耳人气月榜", "json":"popularity.json", "detail":"popularity", "sales":False},
     "new": {"label":"新品日榜", "prefix":"猫耳新品日榜", "json":"new.json", "detail":"new", "sales":False},
 }
-
 ID_CANDIDATES = ["剧集ID","剧集 Id","剧集id","作品ID","作品id","drama_id","dramaId","Drama_ID","ID","id","音频ID"]
 TIME_CANDIDATES = ["抓取时间","采集时间","抓取日期","采集日期","表格时间","榜单时间","榜单日期","统计时间","更新时间","生成时间","下载时间","时间","日期时间"]
-
 
 def norm(x):
     return str(x).strip().replace(" ","").replace("\u3000","").replace("_","").lower()
@@ -143,13 +140,13 @@ def load_board(board):
 
 def metrics(df):
     return {
-      "play":find_col(df,["播放量","播放","播放数","播放次数","VV"]),
-      "subscribe":find_col(df,["订阅数","订阅","收藏数","收藏"]),
-      "total_id":find_col(df,["全部集弹幕UID数","全部ID数","全部ID","全部UID","全部集UID数","弹幕UID数","UID数"]),
-      "paid_id":find_col(df,["付费集弹幕UID数","付费ID数","付费ID","付费UID","付费集UID数"]),
-      "total_episodes":find_col(df,["总集数","集数","总集"]),
-      "paid_episodes":find_col(df,["付费集数","付费集"]),
-      "latest_update":find_col(df,["最新更新","更新","最新更新内容"]),
+        "play":find_col(df,["播放量","播放","播放数","播放次数","VV"]),
+        "subscribe":find_col(df,["订阅数","订阅","收藏数","收藏"]),
+        "total_id":find_col(df,["全部集弹幕UID数","全部ID数","全部ID","全部UID","全部集UID数","弹幕UID数","UID数"]),
+        "paid_id":find_col(df,["付费集弹幕UID数","付费ID数","付费ID","付费UID","付费集UID数"]),
+        "total_episodes":find_col(df,["总集数","集数","总集"]),
+        "paid_episodes":find_col(df,["付费集数","付费集"]),
+        "latest_update":find_col(df,["最新更新","更新","最新更新内容"]),
     }
 
 def trend(rows):
@@ -180,7 +177,6 @@ def summary(df,start,end):
         out.append({"剧集ID":did,"剧名":str(g.iloc[-1]["剧名"]),"首字母":initial(g.iloc[-1]["剧名"]),"在榜天数":int(g["日期"].nunique()),"最高排名":int(ranks.min()),"最低排名":int(ranks.max()),"当前排名":int(ranks.iloc[-1]),"首次上榜":str(g.iloc[0]["日期"]),"最后在榜":str(g.iloc[-1]["日期"]),"榜单状态":status(g,start,end),"趋势状态":trend(ranks.tolist())})
     return out
 
-
 def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
     empty={"score":None,"days":0,"total_days":0,"days_rate":0,"avg_rank":None,"best_rank":None,"top3_days":0,"top10_days":0,"top20_days":0,"top3_rate":0,"top10_rate":0,"top20_rate":0,"rank_quality":0,"rank_points":0,"avg_daily_points":0}
     if df is None or df.empty:return empty
@@ -204,26 +200,29 @@ def calculate_rank_score(df, start_date=None, end_date=None, rank_limit=50):
     score = 100 * ( 0.30 * days_rate + 0.50 * rank_quality + 0.08 * top3_rate + 0.08 * top10_rate + 0.04 * top20_rate )
     return {"score":round(score,2),"days":days,"total_days":total_days,"days_rate":round(days_rate,4),"avg_rank":round(float(x["排名"].mean()),2),"best_rank":int(x["排名"].min()),"top3_days":top3_days,"top10_days":top10_days,"top20_days":top20_days,"top3_rate":round(top3_rate,4),"top10_rate":round(top10_rate,4),"top20_rate":round(top20_rate,4),"rank_quality":round(rank_quality,4),"rank_points":rank_points,"avg_daily_points":round(avg_daily_points,1)}
 
-
 CSS=r'''<style>
 :root{--bg:#0d0f12;--panel:#171a1f;--panel2:#111419;--line:#2b3037;--text:#f3efe5;--muted:#a6a198;--gold:#d8b46a;--gold2:#f0d28b;--green:#6bc28c;--red:#e47d76;--blue:#78a6d8}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(216,180,106,.1),transparent 30%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.container{width:min(1500px,94%);margin:auto;padding:24px 0 60px}.topbar{position:sticky;top:0;z-index:30;background:rgba(13,15,18,.93);backdrop-filter:blur(12px);border-bottom:1px solid rgba(216,180,106,.15)}.nav{width:min(1500px,94%);min-height:64px;margin:auto;display:flex;align-items:center;gap:22px}.brand{font-weight:850;white-space:nowrap}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}.navlinks{display:flex;gap:3px;overflow:auto}.navlinks a{color:#aaa69e;text-decoration:none;padding:9px 14px;border-radius:99px;font-size:13px;font-weight:750;white-space:nowrap}.navlinks a:hover,.navlinks a.active{color:var(--gold2);background:rgba(216,180,106,.1)}.hero{padding:34px 36px;border:1px solid rgba(216,180,106,.2);border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#111419;box-shadow:0 18px 50px rgba(0,0,0,.2);margin:22px 0}.eyebrow{font-size:10px;font-weight:850;letter-spacing:2.5px;color:var(--gold)}h1{margin:8px 0;font-size:clamp(28px,4vw,42px)}.hero p{margin:0;color:var(--muted);font-size:13px}.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:15px;padding:19px;margin-bottom:17px}.filters{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px}.filter label{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:6px}input,select{width:100%;height:41px;border:1px solid #353a42;border-radius:9px;background:#101318;color:var(--text);padding:0 10px;outline:none}input:focus,select:focus{border-color:var(--gold)}button{border:1px solid rgba(216,180,106,.35);background:linear-gradient(135deg,#a67b35,#d8b46a);color:#17130b;height:40px;border-radius:9px;padding:0 14px;font-weight:850;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:17px}.stat{background:#15181d;border:1px solid var(--line);border-radius:13px;padding:16px}.stat .label{font-size:10px;color:var(--muted)}.stat .value{font-size:25px;font-weight:850;margin-top:5px}.gold{color:var(--gold2)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.section-head h2{margin:0;font-size:17px}.muted{font-size:11px;color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{width:100%;border-collapse:collapse}th{background:#111419;color:#aaa69f;font-size:10px;padding:11px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}td{font-size:12px;padding:11px;border-bottom:1px solid rgba(43,48,55,.7);white-space:nowrap}tbody tr:hover td{background:rgba(216,180,106,.035)}.drama-link{border:0;background:none;color:var(--text);padding:0;height:auto;font-weight:750}.drama-link:hover{color:var(--gold2)}.id-text{color:#98948d;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-flex;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.badge.gold{color:var(--gold2);background:rgba(216,180,106,.1)}.badge.green{color:var(--green);background:rgba(107,194,140,.09)}.badge.red{color:var(--red);background:rgba(228,125,118,.09)}.badge.blue{color:var(--blue);background:rgba(120,166,216,.09)}.badge.gray{color:#aaa69f;background:rgba(170,166,159,.08)}.detail-title{font-size:30px;font-weight:900}.score-value{color:var(--gold2);font-weight:900}.detail-id{margin-top:6px;color:var(--gold);font:12px ui-monospace,monospace}.lifecycle-score{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:stretch;margin-bottom:17px}.score-main{background:linear-gradient(145deg,#fffdf7,#fff);border:1px solid #e2d2a9;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}.score-main .score-label{font-size:12px;color:#7b8490;font-weight:800}.score-main .score-number{font-size:42px;line-height:1.05;font-weight:900;color:#a67b35;margin-top:8px}.score-main .score-sub{font-size:11px;color:#7b8490;margin-top:7px}.score-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.score-metric{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:12px 14px}.score-metric .label{font-size:10px;color:#7b8490}.score-metric .value{font-size:16px;font-weight:850;color:#20252b;margin-top:5px}.score-metric .value.gold{color:#a67b35}.info-grid>.lifecycle-score{grid-column:1/-1}.period-score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.period-score-card{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:13px}.period-score-card .label{font-size:10px;color:#7b8490}.period-score-card .value{font-size:18px;font-weight:850;color:#20252b;margin-top:5px}.period-score-card .value.gold{color:#a67b35}@media(max-width:780px){.period-score-grid{grid-template-columns:repeat(2,1fr)}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(216,180,106,.1),transparent 30%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.container{width:min(1500px,94%);margin:auto;padding:24px 0 60px}.topbar{position:sticky;top:0;z-index:30;background:rgba(13,15,18,.93);backdrop-filter:blur(12px);border-bottom:1px solid rgba(216,180,106,.15)}.nav{width:min(1500px,94%);min-height:64px;margin:auto;display:flex;align-items:center;gap:22px}.brand{font-weight:850;white-space:nowrap}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px}.navlinks{display:flex;gap:3px;overflow:auto}.navlinks a{color:#aaa69e;text-decoration:none;padding:9px 14px;border-radius:99px;font-size:13px;font-weight:750;white-space:nowrap}.navlinks a:hover,.navlinks a.active{color:var(--gold2);background:rgba(216,180,106,.1)}.hero{padding:34px 36px;border:1px solid rgba(216,180,106,.2);border-radius:20px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#111419;box-shadow:0 18px 50px rgba(0,0,0,.2);margin:22px 0}.eyebrow{font-size:10px;font-weight:850;letter-spacing:2.5px;color:var(--gold)}h1{margin:8px 0;font-size:clamp(28px,4vw,42px)}.hero p{margin:0;color:var(--muted);font-size:13px}.panel{background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:15px;padding:19px;margin-bottom:17px}
+/* 优化 filters 避免响应式阶段断行裁剪 */
+.filters{display:flex;flex-wrap:wrap;gap:12px;}
+.filter{flex:1 1 180px;min-width:160px;}
+.filter label{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:6px}input,select{width:100%;height:41px;border:1px solid #353a42;border-radius:9px;background:#101318;color:var(--text);padding:0 10px;outline:none}input:focus,select:focus{border-color:var(--gold)}button{border:1px solid rgba(216,180,106,.35);background:linear-gradient(135deg,#a67b35,#d8b46a);color:#17130b;height:40px;border-radius:9px;padding:0 14px;font-weight:850;cursor:pointer}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:17px}.stat{background:#15181d;border:1px solid var(--line);border-radius:13px;padding:16px}.stat .label{font-size:10px;color:var(--muted)}.stat .value{font-size:25px;font-weight:850;margin-top:5px}.gold{color:var(--gold2)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.section-head h2{margin:0;font-size:17px}.muted{font-size:11px;color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{width:100%;border-collapse:collapse}th{background:#111419;color:#aaa69f;font-size:10px;padding:11px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}td{font-size:12px;padding:11px;border-bottom:1px solid rgba(43,48,55,.7);white-space:nowrap}tbody tr:hover td{background:rgba(216,180,106,.035)}.drama-link{border:0;background:none;color:var(--text);padding:0;height:auto;font-weight:750;cursor:pointer}.drama-link:hover{color:var(--gold2)}.id-text{color:#98948d;font:11px ui-monospace,SFMono-Regular,Menlo,monospace}.badge{display:inline-flex;padding:4px 8px;border-radius:99px;font-size:10px;font-weight:800}.badge.gold{color:var(--gold2);background:rgba(216,180,106,.1)}.badge.green{color:var(--green);background:rgba(107,194,140,.09)}.badge.red{color:var(--red);background:rgba(228,125,118,.09)}.badge.blue{color:var(--blue);background:rgba(120,166,216,.09)}.badge.gray{color:#aaa69f;background:rgba(170,166,159,.08)}.detail-title{font-size:30px;font-weight:900}.score-value{color:var(--gold2);font-weight:900}.detail-id{margin-top:6px;color:var(--gold);font:12px ui-monospace,monospace}.lifecycle-score{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:stretch;margin-bottom:17px}.score-main{background:linear-gradient(145deg,#fffdf7,#fff);border:1px solid #e2d2a9;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;justify-content:center}.score-main .score-label{font-size:12px;color:#7b8490;font-weight:800}.score-main .score-number{font-size:42px;line-height:1.05;font-weight:900;color:#a67b35;margin-top:8px}.score-main .score-sub{font-size:11px;color:#7b8490;margin-top:7px}.score-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.score-metric{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:12px 14px}.score-metric .label{font-size:10px;color:#7b8490}.score-metric .value{font-size:16px;font-weight:850;color:#20252b;margin-top:5px}.score-metric .value.gold{color:#a67b35}.info-grid>.lifecycle-score{grid-column:1/-1}.period-score-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.period-score-card{background:#fff;border:1px solid #dfe3e8;border-radius:11px;padding:13px}.period-score-card .label{font-size:10px;color:#7b8490}.period-score-card .value{font-size:18px;font-weight:850;color:#20252b;margin-top:5px}.period-score-card .value.gold{color:#a67b35}@media(max-width:780px){.period-score-grid{grid-template-columns:repeat(2,1fr)}}
 .detail-controls{display:grid;grid-template-columns:180px 180px 230px;gap:11px;align-items:end}.segment{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.segment button{flex:1;border:0;border-radius:0;background:#101318;color:#aaa69f}.segment button.active{background:rgba(216,180,106,.16);color:var(--gold2)}.info-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.info-card{background:#14171b;border:1px solid var(--line);border-radius:11px;padding:13px}.info-label{font-size:10px;color:var(--muted)}.info-value{font-size:15px;font-weight:850;margin-top:5px;word-break:break-all}.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.chart-card{background:#14171b;border:1px solid var(--line);border-radius:13px;padding:14px}.chart-title{font-size:15px;font-weight:850}.chart-sub{font-size:10px;color:var(--muted);margin-top:4px}.chart{height:370px}.back{display:inline-block;color:var(--gold2);text-decoration:none;font-size:12px;font-weight:800;margin-bottom:12px}.empty{text-align:center;color:var(--muted);padding:35px}.footer{text-align:center;color:#6d6962;font-size:10px;padding:24px}.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.board-card{display:block;text-decoration:none;background:#15181d;border:1px solid var(--line);border-radius:16px;padding:24px}.board-card:hover{border-color:rgba(216,180,106,.4);transform:translateY(-2px)}.board-card h2{margin:8px 0}.board-card p{color:var(--muted);font-size:12px}.board-card span{color:var(--gold2);font-weight:800;font-size:12px}
 
-/* 白天/黑夜按钮通用样式 */
+/* 白天/黑夜按钮样式 */
 .theme-buttons{display:flex;gap:6px;}
 .theme-btn{height:41px!important;background:#101318!important;color:#aaa69f!important;border:1px solid #353a42!important;cursor:pointer;}
 .theme-btn.active{background:rgba(216,180,106,.2)!important;color:var(--gold2)!important;border-color:rgba(216,180,106,.6)!important;}
 
-/* 主页表格主题 */
-#homeTableWrap.theme-day table, 
-#homeTableWrap.theme-day table tr, 
+/* 主页表格主题白天/夜间渲染 */
+#homeTableWrap.theme-day table,
+#homeTableWrap.theme-day table tr,
 #homeTableWrap.theme-day table td { background-color: #ffffff !important; color: #20252b !important; border-bottom-color: #e5e7eb; }
 #homeTableWrap.theme-day table th { background-color: #f0f2f4 !important; color: #59616b !important; }
 #homeTableWrap.theme-day .drama-link { color: #20252b !important; }
 
-#homeTableWrap.theme-night table, 
-#homeTableWrap.theme-night table tr, 
+#homeTableWrap.theme-night table,
+#homeTableWrap.theme-night table tr,
 #homeTableWrap.theme-night table td { background-color: #171a1f !important; color: #f3efe5 !important; border-bottom-color: #2b3037; }
 #homeTableWrap.theme-night table th { background-color: #111419 !important; color: #aaa69f !important; }
 #homeTableWrap.theme-night .drama-link { color: #f3efe5 !important; }
@@ -233,14 +232,18 @@ CSS=r'''<style>
 
 @media(max-width:1050px){.stats{grid-template-columns:repeat(3,1fr)}.info-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:780px){.lifecycle-score{grid-template-columns:1fr}.score-metrics{grid-template-columns:1fr 1fr}.chart-grid{grid-template-columns:1fr}.detail-controls{grid-template-columns:1fr}.board-grid{grid-template-columns:1fr}}@media(max-width:600px){.score-metrics{grid-template-columns:1fr}.stats,.info-grid{grid-template-columns:1fr 1fr}.hero{padding:26px 22px}.detail-title{font-size:25px}}
 </style>'''
+
 PLOTLY='<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>'
 
 def nav(active):
     links=[]
-    for k,c in BOARDS.items():links.append(f'<a class="{"active" if k==active else ""}" href="{k}.html">{c["label"]}</a>')
+    links.append(f'<a class="{"active" if active=="home" else ""}" href="index.html">首页</a>')
+    for k,c in BOARDS.items():
+        links.append(f'<a class="{"active" if k==active else ""}" href="{k}.html">{c["label"]}</a>')
     return f'<div class="topbar"><div class="nav"><div class="brand">猫耳数据中心<small>MAOER · AUDIO DRAMA</small></div><div class="navlinks">{"".join(links)}</div></div></div>'
 
-def detail_name(board,did):return f'{BOARDS[board]["detail"]}_{re.sub(r"[^0-9A-Za-z_-]","_",str(did))}.html'
+def detail_name(board,did):
+    return f'{BOARDS[board]["detail"]}_{re.sub(r"[^0-9A-Za-z_-]","_",str(did))}.html'
 
 def detail_page(board,did,df):
     g=df[df["剧集ID"].astype(str)==str(did)].sort_values("日期").copy()
@@ -303,100 +306,106 @@ start.onchange=render;end.onchange=render;document.addEventListener('DOMContentL
 
 def board_page(board,df):
     cfg=BOARDS[board]; dates=sorted(df["日期"].unique()); latest=dates[-1]; default=max(pd.to_datetime(dates[0]),pd.to_datetime(latest)-pd.Timedelta(days=DEFAULT_DAYS-1)).strftime("%Y-%m-%d")
-    for did in sorted(set(df["剧集ID"].dropna().astype(str))):detail_page(board,did,df)
-    datafile=cfg["json"]
-    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>排序规则 1</label><select id="sort1"></option><option value="best">最高排名 ↑<option value="days">在榜天数 ↓</option><option value="score">综合评分 ↓</option><option value="current" selected>当前排名 ↑</option><option value="initial">首字母 ↑</option><option value="name">剧名 ↑</option></select></div><div class="filter"><label>排序规则 2</label><select id="sort2"><option value="none" selected>不使用第二排序</option><option value="days">在榜天数 ↓</option><option value="score">综合评分 ↓</option><option value="best">最高排名 ↑</option><option value="current">当前排名 ↑</option><option value="initial">首字母 ↑</option><option value="name">剧名 ↑</option></select></div><div class="filter"><label>搜索剧名</label><input id="q" placeholder="输入剧名…"></div><div class="filter"><label>搜索 ID</label><input id="qi" placeholder="输入剧集 ID…"></div></div></div><div class="stats"><div class="stat"><div class="label">剧目数量</div><div id="n" class="value gold">—</div></div><div class="stat"><div class="label">稳定在榜</div><div id="stable" class="value">—</div></div><div class="stat"><div class="label">新晋</div><div id="newCount" class="value">—</div></div><div class="stat"><div class="label">掉榜 / 闪现</div><div id="drop" class="value">—</div></div><div class="stat"><div class="label">统计范围</div><div id="range" class="value" style="font-size:14px">—</div></div></div><div class="panel"><div class="section-head"><h2>剧目榜单</h2><span id="count" class="muted"></span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>剧名</th><th>在榜天数</th><th>综合评分</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>累计排名积分</th><th>首次</th><th>最后</th><th>状态</th><th>趋势</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]} · {dates[0]} → {dates[-1]}</div></div><script>
-let APP=null;const DETAIL='{cfg["detail"]}';const BOARD_SCORE_ENABLED='{board}';function id(r){{return r['剧集ID']==null?'':String(r['剧集ID'])}}function status(g,s,e){{const d=[...new Set(g.map(r=>r.日期))].sort();if(!d.length)return'闪现';if(d[0]===s&&d.at(-1)===e)return'稳定在榜';if(d[0]!==s&&d.at(-1)===e)return'新晋榜单';if(d[0]===s&&d.at(-1)!==e)return'掉榜';return'闪现'}}function trend(g){{const a=g.map(r=>Number(r.排名)).filter(Number.isFinite);if(a.length<2||a[0]===a.at(-1))return'波动';if(a.every((v,i)=>i===0||v<=a[i-1]))return'上升';if(a.every((v,i)=>i===0||v>=a[i-1]))return'下降';return Math.abs(a.at(-1)-a[0])<=2?'波动':a.at(-1)<a[0]?'上升':'下降'}}function badge(x){{const c=x==='稳定在榜'?'gold':x==='新晋榜单'?'blue':(x==='掉榜'||x==='下降')?'red':x==='上升'?'green':'gray';return'<span class="badge '+c+'">'+x+'</span>'}}function calculateScore(g,s,e){{if(BOARD_SCORE_ENABLED!=='sales')return null;const mp=new Map();g.forEach(r=>{{const d=r.日期,n=Number(r.排名);if(!d||!Number.isFinite(n)||n<1||n>50)return;if(!mp.has(d)||n<mp.get(d))mp.set(d,n)}});const vals=[...mp.values()];if(!vals.length)return null;const total=(new Date(e+'T00:00:00')-new Date(s+'T00:00:00'))/86400000+1;if(total<=0)return null;const days=vals.length,daysRate=days/total,rankQuality=vals.reduce((a,r)=>a+(51-r)/50,0)/days,top3=vals.filter(r=>r<=3).length/total,top10=vals.filter(r=>r<=10).length/total,top20=vals.filter(r=>r<=20).length/total;return Number((100*(.30*daysRate+.50*rankQuality+.08*top3+.08*top10+.04*top20)).toFixed(2))}}function render(){{const s=start.value,e=end.value;if(s>e){{alert('开始日期不能晚于结束日期');return}}let rows=APP.records.filter(r=>r.日期>=s&&r.日期<=e),qq=q.value.trim().toLowerCase(),ii=qi.value.trim();if(qq)rows=rows.filter(r=>String(r.剧名).toLowerCase().includes(qq));if(ii)rows=rows.filter(r=>id(r).includes(ii));const m=new Map();rows.forEach(r=>{{const k=id(r)?'id:'+id(r):'name:'+r.剧名;if(!m.has(k))m.set(k,[]);m.get(k).push(r)}});let a=[];m.forEach(g=>{{g.sort((x,y)=>x.日期.localeCompare(y.日期));const rs=g.map(r=>Number(r.排名)).filter(Number.isFinite);if(rs.length)a.push({{id:id(g[0]),name:g.at(-1).剧名,initial:g[0].首字母||'#',days:new Set(g.map(r=>r.日期)).size,score:calculateScore(g,s,e),best:Math.min(...rs),worst:Math.max(...rs),rankPoints:BOARD_SCORE_ENABLED==='sales'?rs.reduce((sum,r)=>sum+(51-r),0):null,current:rs.at(-1),first:g[0].日期,last:g.at(-1).日期,status:status(g,s,e),trend:trend(g)}})}});const s1=sort1.value,s2=sort2.value;function compareBy(x,y,k){{if(k==='none')return 0;if(k==='days')return y.days-x.days;if(k==='score')return (y.score??-1)-(x.score??-1);if(k==='best')return x.best-y.best;if(k==='current')return x.current-y.current;if(k==='initial')return x.initial.localeCompare(y.initial,'zh-CN');if(k==='name')return x.name.localeCompare(y.name,'zh-CN');return 0}}a.sort((x,y)=>compareBy(x,y,s1)||compareBy(x,y,s2)||x.name.localeCompare(y.name,'zh-CN')||String(x.id).localeCompare(String(y.id)));n.textContent=a.length;stable.textContent=a.filter(x=>x.status==='稳定在榜').length;newCount.textContent=a.filter(x=>x.status==='新晋榜单').length;drop.textContent=a.filter(x=>x.status==='掉榜'||x.status==='闪现').length;range.textContent=s+' → '+e;count.textContent=a.length+' 部';table.innerHTML=a.length?a.map((x,i)=>'<tr><td>'+ (i+1)+'</td><td>'+ (x.id?'<a class="drama-link" href="'+DETAIL+'_'+encodeURIComponent(x.id)+'.html">'+x.name+'</a>':x.name)+'</td><td>'+x.days+'</td><td class="score-value">'+(x.score==null?'—':x.score.toFixed(2))+'</td><td>#'+x.best+'</td><td>#'+x.worst+'</td><td>#'+x.current+'</td><td>'+(x.rankPoints==null?'—':x.rankPoints.toLocaleString())+'</td><td>'+x.first+'</td><td>'+x.last+'</td><td>'+badge(x.status)+'</td><td>'+badge(x.trend)+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">没有符合条件的数据</td></tr>'}}fetch('data/{datafile}').then(r=>r.json()).then(x=>{{APP=x;render()}});start.onchange=end.onchange=sort1.onchange=sort2.onchange=render;q.oninput=qi.oninput=render;
+    for did in sorted(set(df["剧集ID"].dropna().astype(str))):
+        detail_page(board,did,df)
+    
+    # 将 JSON 写回输出
+    df.to_json(OUTPUT_DIR / cfg["json"], orient="records", date_format="iso", force_ascii=False)
+    
+    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{cfg["label"]} · 猫耳数据中心</title>{CSS}</head><body>{nav(board)}<div class="container"><section class="hero"><div class="eyebrow">MAOER DATA CENTER</div><h1>{cfg["label"]}</h1><p>以剧集 ID 为唯一识别 · 历史跨期分析 · 每剧独立详情页</p></section><div class="panel"><div class="filters"><div class="filter"><label>开始日期</label><input id="start" type="date" min="{dates[0]}" max="{latest}" value="{default}"></div><div class="filter"><label>结束日期</label><input id="end" type="date" min="{dates[0]}" max="{latest}" value="{latest}"></div><div class="filter"><label>榜单状态</label><select id="status"><option value="all">全部状态</option><option value="稳定在榜">稳定在榜</option><option value="新晋榜单">新晋榜单</option><option value="掉榜">掉榜</option><option value="闪现">闪现</option></select></div><div class="filter"><label>搜索剧名 / ID</label><input id="kw" type="text" placeholder="模糊搜索..."></div><div class="filter"><label>剧集底色</label><div class="theme-buttons"><button id="btnDay" class="theme-btn active" onclick="setTheme('day')">☀ 白天</button><button id="btnNight" class="theme-btn" onclick="setTheme('night')">☾ 黑夜</button></div></div></div></div><div class="stats"><div class="stat"><div class="label">统计区间上榜剧集</div><div id="statTotal" class="value gold">0</div></div><div class="stat"><div class="label">稳定在榜</div><div id="statStable" class="value">0</div></div><div class="stat"><div class="label">新晋榜单</div><div id="statNew" class="value">0</div></div><div class="stat"><div class="label">掉榜</div><div id="statDrop" class="value">0</div></div><div class="stat"><div class="label">闪现</div><div id="statFlash" class="value">0</div></div></div><div class="panel"><div class="section-head"><h2>剧集列表</h2><span id="count" class="muted">加载中...</span></div><div id="homeTableWrap" class="table-wrap theme-day"><table><thead><tr><th>剧集ID</th><th>剧名</th><th>首字母</th><th>在榜天数</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>首次上榜</th><th>最后在榜</th><th>榜单状态</th><th>趋势</th><th>详情</th></tr></thead><tbody id="table"></tbody></table></div></div><div class="footer">猫耳数据中心 · {cfg["label"]}</div></div><script>
+let RAW=[]; const BOARD='{board}', DETAIL_PREFIX='{cfg["detail"]}';
+function badge(status){{const m={{'稳定在榜':'green','新晋榜单':'gold','掉榜':'red','闪现':'gray'}};return `<span class="badge ${{m[status]||'gray'}}">${{status}}</span>`}}
+function trendBadge(t){{const m={{'上升':'green','下降':'red','波动':'blue'}};return `<span class="badge ${{m[t]||'gray'}}">${{t}}</span>`}}
+function setTheme(mode){{
+  const wrap=document.getElementById('homeTableWrap');
+  if(mode==='day'){{
+    wrap.classList.remove('theme-night'); wrap.classList.add('theme-day');
+    btnDay.classList.add('active'); btnNight.classList.remove('active');
+  }}else{{
+    wrap.classList.remove('theme-day'); wrap.classList.add('theme-night');
+    btnNight.classList.add('active'); btnDay.classList.remove('active');
+  }}
+}}
+function render(){{
+  const s=start.value, e=end.value, st=status.value, kw=kw.value.trim().toLowerCase();
+  if(s>e){{alert('开始日期不能晚于结束日期');return}}
+  const sub=RAW.filter(r=>r.日期>=s&&r.日期<=e);
+  const map=new Map();
+  sub.forEach(r=>{{
+    const key=r.剧集ID||r.剧名;
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  }});
+  const list=[];
+  map.forEach((rows, key)=>{{
+    rows.sort((a,b)=>a.日期.localeCompare(b.日期));
+    const ranks=rows.map(r=>Number(r.排名)).filter(v=>!isNaN(v));
+    if(!ranks.length)return;
+    const last=rows[rows.length-1];
+    const ds=[...new Set(rows.map(r=>r.日期))];
+    const statusVal=(ds[0]===s && ds[ds.length-1]===e)?'稳定在榜':(ds[0]!==s && ds[ds.length-1]===e)?'新晋榜单':(ds[0]===s && ds[ds.length-1]!==e)?'掉榜':'闪现';
+    list.push({{
+      did: last.剧集ID||'',
+      name: last.剧名,
+      initial: last.首字母||'#',
+      days: ds.length,
+      best: Math.min(...ranks),
+      worst: Math.max(...ranks),
+      cur: ranks[ranks.length-1],
+      first: rows[0].日期,
+      last: last.日期,
+      status: statusVal,
+      trend: ranks.length<2||ranks[0]===ranks[ranks.length-1]?'波动':(ranks[ranks.length-1]<ranks[0]?'上升':'下降')
+    }});
+  }});
+  let filtered=list.filter(r=>{{
+    if(st!=='all' && r.status!==st) return false;
+    if(kw && !r.name.toLowerCase().includes(kw) && !r.did.toLowerCase().includes(kw)) return false;
+    return true;
+  }});
+  filtered.sort((a,b)=>a.cur-b.cur);
+  statTotal.textContent=filtered.length;
+  statStable.textContent=filtered.filter(r=>r.status==='稳定在榜').length;
+  statNew.textContent=filtered.filter(r=>r.status==='新晋榜单').length;
+  statDrop.textContent=filtered.filter(r=>r.status==='掉榜').length;
+  statFlash.textContent=filtered.filter(r=>r.status==='闪现').length;
+  count.textContent=`共 ${{filtered.length}} 剧目`;
+  table.innerHTML=filtered.length?filtered.map(r=>`<tr>
+    <td class="id-text">${{r.did||'--'}}</td>
+    <td><a class="drama-link" href="${{DETAIL_PREFIX}}_${{(r.did||'').replace(/[^0-9A-Za-z_-]/g,'_')}}.html">${{r.name}}</a></td>
+    <td>${{r.initial}}</td>
+    <td>${{r.days}}</td>
+    <td>#${{r.best}}</td>
+    <td>#${{r.worst}}</td>
+    <td><strong>#${{r.cur}}</strong></td>
+    <td>${{r.first}}</td>
+    <td>${{r.last}}</td>
+    <td>${{badge(r.status)}}</td>
+    <td>${{trendBadge(r.trend)}}</td>
+    <td><a class="drama-link" href="${{DETAIL_PREFIX}}_${{(r.did||'').replace(/[^0-9A-Za-z_-]/g,'_')}}.html">查看详情</a></td>
+  </tr>`).join(''):'<tr><td class="empty" colspan="12">暂无符合条件的剧目数据</td></tr>';
+}}
+fetch('{cfg["json"]}').then(res=>res.json()).then(d=>{{ RAW=d; render(); }});
+start.onchange=render; end.onchange=render; status.onchange=render; kw.oninput=render;
 </script></body></html>'''
     (OUTPUT_DIR/f"{board}.html").write_text(page,encoding='utf-8')
 
-def write_json(board,df):
-    p=OUTPUT_DIR/"data";p.mkdir(parents=True,exist_ok=True)
-    payload={"meta":{"board":board,"label":BOARDS[board]["label"],"data_start":str(df.日期.min()),"data_end":str(df.日期.max()),"record_count":len(df),"id_count":df.剧集ID.nunique(dropna=True)},"records":records(df)}
-    (p/BOARDS[board]["json"]).write_text(json.dumps(payload,ensure_ascii=False,separators=(",",":")),encoding='utf-8')
-
-def clean_output():
-    if OUTPUT_DIR.exists():
-        for x in OUTPUT_DIR.iterdir():shutil.rmtree(x) if x.is_dir() else x.unlink()
-    OUTPUT_DIR.mkdir(parents=True,exist_ok=True)
+def home_page():
+    page=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>猫耳数据中心</title>{CSS}</head><body>{nav("home")}<div class="container"><section class="hero"><div class="eyebrow">MAOER AUDIO DRAMA DASHBOARD</div><h1>猫耳三榜单数据分析中心</h1><p>专注猫耳FM数据洞察 · 榜单轨迹跟踪 · 剧集多维对比分析</p></section><div class="board-grid">
+    <a class="board-card" href="sales.html"><div class="eyebrow">SALES MONTHLY</div><h2>销量月榜</h2><p>基于跨期数据跟踪，计算剧集月榜表现指数、在榜率与区间得分。</p><span>进入数据大厅 →</span></a>
+    <a class="board-card" href="popularity.html"><div class="eyebrow">POPULARITY MONTHLY</div><h2>人气月榜</h2><p>持续记录热度与播放变动趋势，掌握长尾人气走向。</p><span>进入数据大厅 →</span></a>
+    <a class="board-card" href="new.html"><div class="eyebrow">NEW DAILY</div><h2>新品日榜</h2><p>捕捉新剧爆发力与日增量波动，实时追踪新上线表现。</p><span>进入数据大厅 →</span></a>
+    </div><div class="footer">猫耳数据中心 · GitHub Pages Dashboard</div></div></body></html>'''
+    (OUTPUT_DIR/"index.html").write_text(page,encoding='utf-8')
 
 def main():
-    print("="*70);print("🎙️ 猫耳数据中心 · 三榜单构建");print("="*70)
-    boards={k:v for k in BOARDS for v in [load_board(k)] if v is not None and not v.empty}
-    if not boards:raise RuntimeError("没有找到有效榜单 CSV")
-    clean_output()
-    for k,df in boards.items():write_json(k,df);board_page(k,df)
-    available={k:v for k,v in boards.items()}
-    if not available:
-        raise RuntimeError("没有可用于首页展示的榜单")
-    default_board="sales" if "sales" in available else next(iter(available))
-    board_meta={k:{"label":BOARDS[k]["label"],"start":str(v.日期.min()),"end":str(v.日期.max())} for k,v in available.items()}
-    home_html=f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>猫耳数据中心</title>{CSS}
-<style>.home-tabs{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}}.home-tab{{background:#15181d;color:#aaa69f;border:1px solid var(--line);height:40px;padding:0 18px;border-radius:9px;font-weight:800}}.home-tab.active{{background:rgba(216,180,106,.14);color:var(--gold2);border-color:rgba(216,180,106,.4)}}.home-board-note{{font-size:11px;color:var(--muted)}}.display-settings{{padding:16px 19px}}.display-controls{{display:grid;grid-template-columns:260px minmax(260px,420px);gap:24px;align-items:end}}.display-settings label{{display:block;color:var(--muted);font-size:11px;font-weight:750;margin-bottom:7px}}.theme-buttons{{display:flex;gap:8px}}.theme-btn{{height:40px!important;background:#101318!important;color:#aaa69f!important;border:1px solid #353a42!important}}.theme-btn.active{{background:rgba(216,180,106,.16)!important;color:var(--gold2)!important;border-color:rgba(216,180,106,.45)!important}}.setting-hint{{font-size:10px;color:var(--muted);margin-top:6px}}.display-settings input{{max-width:420px}}@media(max-width:780px){{.display-controls{{grid-template-columns:1fr}}}}</style></head><body>{nav('home')}<div class="container"><section class="hero"><div class="eyebrow">MAOER · DATA CENTER</div><h1>猫耳数据中心</h1><p>默认显示最新 30 天剧目，可直接切换销量月榜 / 人气月榜 / 新品日榜，并进入单剧详情。</p></section>
-<div class="panel"><div class="section-head"><div><h2>榜单切换与筛选</h2><span id="boardNote" class="home-board-note"></span></div><a id="moreLink" class="back" href="#">进入完整榜单 →</a></div><div id="tabs" class="home-tabs"></div>
-<div class="filters">
-<div class="filter"><label>开始日期</label><input id="start" type="date"></div>
-<div class="filter"><label>结束日期</label><input id="end" type="date"></div>
-<div class="filter"><label>排序规则 1</label><select id="sort1"><option value="days">在榜天数 ↓</option><option value="score">综合评分 ↓</option><option value="best">最高排名 ↑</option><option value="current" selected>当前排名 ↑</option><option value="initial">首字母 ↑</option><option value="name">剧名 ↑</option></select></div>
-<div class="filter"><label>排序规则 2</label><select id="sort2"><option value="none">不使用第二排序</option><option value="days">在榜天数 ↓</option><option value="score">综合评分 ↓</option><option value="best">最高排名 ↑</option><option value="current">当前排名 ↑</option><option value="initial" selected>首字母 ↑</option><option value="name">剧名 ↑</option></select></div>
-<div class="filter"><label>搜索剧名</label><input id="q" placeholder="输入剧名…"></div>
-<div class="filter"><label>搜索 ID</label><input id="qi" placeholder="输入剧集 ID…"></div>
-</div></div>
-<div class="panel display-settings">
-<div class="section-head"><div><h2>剧集显示设置</h2><span class="home-board-note">以下设置只影响下方剧集表格，不改变顶部 Banner</span></div></div>
-<div class="display-controls">
-<div class="theme-control"><label>剧集表格底色</label><div class="theme-buttons"><button type="button" class="theme-btn active" data-theme="day">☀ 白天</button><button type="button" class="theme-btn" data-theme="night">☾ 黑夜</button></div></div>
-<div class="threshold-control"><label>ID 换色阈值</label><input id="idThreshold" type="number" min="0" step="1" placeholder="例如 10000"><div class="setting-hint">剧集 ID 大于这个数字时，该行使用另一种底色；留空则不启用。</div></div>
-</div></div>
-<div class="stats"><div class="stat"><div class="label">剧目数量</div><div id="n" class="value gold">—</div></div><div class="stat"><div class="label">稳定在榜</div><div id="stable" class="value">—</div></div><div class="stat"><div class="label">新晋</div><div id="newCount" class="value">—</div></div><div class="stat"><div class="label">掉榜 / 闪现</div><div id="drop" class="value">—</div></div><div class="stat"><div class="label">统计范围</div><div id="range" class="value" style="font-size:14px">—</div></div></div>
-<div class="panel"><div class="section-head"><h2 id="tableTitle">最近 30 天剧目</h2><span id="count" class="muted"></span></div><div id="homeTableWrap" class="table-wrap home-table theme-day"><table><thead><tr><th>#</th><th>剧名</th><th>在榜天数</th><th>综合评分</th><th>最高排名</th><th>最低排名</th><th>当前排名</th><th>累计排名积分</th><th>首次</th><th>最后</th><th>状态</th><th>趋势</th></tr></thead><tbody id="table"></tbody></table></div></div>
-<div class="footer">数据由 GitHub Actions 自动更新 · 首页默认最新 30 天</div></div><script>
-const META={json.dumps(board_meta,ensure_ascii=False,separators=(',',':'))};const DEFAULT_BOARD='{default_board}';let BOARD=DEFAULT_BOARD,APP=null;
-const files={json.dumps({k:BOARDS[k]["json"] for k in available},ensure_ascii=False,separators=(',',':'))};
-function id(r){{return r['剧集ID']==null?'':String(r['剧集ID'])}}
-function status(g,s,e){{const d=[...new Set(g.map(r=>r.日期))].sort();if(!d.length)return'闪现';if(d[0]===s&&d.at(-1)===e)return'稳定在榜';if(d[0]!==s&&d.at(-1)===e)return'新晋榜单';if(d[0]===s&&d.at(-1)!==e)return'掉榜';return'闪现'}}
-function trend(g){{const a=g.map(r=>Number(r.排名)).filter(Number.isFinite);if(a.length<2||a[0]===a.at(-1))return'波动';if(a.every((v,i)=>i===0||v<=a[i-1]))return'上升';if(a.every((v,i)=>i===0||v>=a[i-1]))return'下降';return Math.abs(a.at(-1)-a[0])<=2?'波动':a.at(-1)<a[0]?'上升':'下降'}}
-function badge(x){{const c=x==='稳定在榜'?'gold':x==='新晋榜单'?'blue':(x==='掉榜'||x==='下降')?'red':x==='上升'?'green':'gray';return'<span class="badge '+c+'">'+x+'</span>'}}function calculateScore(g,s,e){{if(BOARD!=='sales')return null;const mp=new Map();g.forEach(r=>{{const d=r.日期,n=Number(r.排名);if(!d||!Number.isFinite(n)||n<1||n>50)return;if(!mp.has(d)||n<mp.get(d))mp.set(d,n)}});const vals=[...mp.values()];if(!vals.length)return null;const total=(new Date(e+'T00:00:00')-new Date(s+'T00:00:00'))/86400000+1;if(total<=0)return null;const days=vals.length,daysRate=days/total,rankQuality=vals.reduce((a,r)=>a+(51-r)/50,0)/days,top3=vals.filter(r=>r<=3).length/total,top10=vals.filter(r=>r<=10).length/total,top20=vals.filter(r=>r<=20).length/total;return Number((100*(.30*daysRate+.50*rankQuality+.08*top3+.08*top10+.04*top20)).toFixed(2))}}
-function setBoard(b){{BOARD=b;APP=null;document.querySelectorAll('.home-tab').forEach(x=>x.classList.toggle('active',x.dataset.board===b));const m=META[b];const latest=m.end;const d=new Date(latest+'T00:00:00');d.setDate(d.getDate()-29);const first=m.start;start.value=d.toISOString().slice(0,10)>first?d.toISOString().slice(0,10):first;end.value=latest;moreLink.href=b+'.html';boardNote.textContent=m.start+' → '+m.end+' · 默认最新 30 天';tableTitle.textContent=m.label+' · 最近 30 天';fetch('data/'+files[b]).then(r=>r.json()).then(x=>{{APP=x;render()}})}}
-function render(){{if(!APP)return;const s=start.value,e=end.value;if(s>e)return;let rows=APP.records.filter(r=>r.日期>=s&&r.日期<=e),qq=q.value.trim().toLowerCase(),ii=qi.value.trim();if(qq)rows=rows.filter(r=>String(r.剧名).toLowerCase().includes(qq));if(ii)rows=rows.filter(r=>id(r).includes(ii));const m=new Map();rows.forEach(r=>{{const k=id(r)?'id:'+id(r):'name:'+r.剧名;if(!m.has(k))m.set(k,[]);m.get(k).push(r)}});let a=[];m.forEach(g=>{{g.sort((x,y)=>x.日期.localeCompare(y.日期));const rs=g.map(r=>Number(r.排名)).filter(Number.isFinite);if(rs.length)a.push({{id:id(g[0]),name:g.at(-1).剧名,initial:g[0].首字母||'#',days:new Set(g.map(r=>r.日期)).size,score:calculateScore(g,s,e),best:Math.min(...rs),worst:Math.max(...rs),rankPoints:BOARD==='sales'?rs.reduce((sum,r)=>sum+(51-r),0):null,current:rs.at(-1),first:g[0].日期,last:g.at(-1).日期,status:status(g,s,e),trend:trend(g)}})}});const s1=sort1.value,s2=sort2.value;function compareBy(x,y,k){{if(k==='none')return 0;if(k==='days')return y.days-x.days;if(k==='score')return (y.score??-1)-(x.score??-1);if(k==='best')return x.best-y.best;if(k==='current')return x.current-y.current;if(k==='initial')return x.initial.localeCompare(y.initial,'zh-CN');if(k==='name')return x.name.localeCompare(y.name,'zh-CN');return 0}}a.sort((x,y)=>compareBy(x,y,s1)||compareBy(x,y,s2)||x.name.localeCompare(y.name,'zh-CN')||String(x.id).localeCompare(String(y.id)));n.textContent=a.length;stable.textContent=a.filter(x=>x.status==='稳定在榜').length;newCount.textContent=a.filter(x=>x.status==='新晋榜单').length;drop.textContent=a.filter(x=>x.status==='掉榜'||x.status==='闪现').length;range.textContent=s+' → '+e;count.textContent=a.length+' 部';table.innerHTML=a.length?a.map((x,i)=>'<tr class="'+rowClass(x)+'"><td>'+(i+1)+'</td><td>'+(x.id?'<a class="drama-link" href="'+files[BOARD].replace('.json','').replace('sales','sales')+'#'+encodeURIComponent(x.id)+'" onclick="return goDetail(event,\''+BOARD+'\',\''+x.id.replace(/\\/g,'')+'\')">'+x.name+'</a>':x.name)+'</td><td>'+x.days+'</td><td class="score-value">'+(x.score==null?'—':x.score.toFixed(2))+'</td><td>#'+x.best+'</td><td>#'+x.worst+'</td><td>#'+x.current+'</td><td>'+(x.rankPoints==null?'—':x.rankPoints.toLocaleString())+'</td><td>'+x.first+'</td><td>'+x.last+'</td><td>'+badge(x.status)+'</td><td>'+badge(x.trend)+'</td></tr>').join(''):'<tr><td colspan="12" class="empty">没有符合条件的数据</td></tr>'}}
-function goDetail(ev,b,d){{ev.preventDefault();location.href={json.dumps({k:BOARDS[k]["detail"] for k in available},ensure_ascii=False,separators=(',',':'))}[b]+'_'+encodeURIComponent(d)+'.html';return false}}
+    print("🚀 开始数据构建...")
+    for b in BOARDS:
+        df = load_board(b)
+        if df is not None and not df.empty:
+            board_page(b, df)
+    home_page()
+    print("✨ 所有页面构建完成！已写出到 site/ 目录。")
 
-let currentTheme='day';
-
-function rowClass(x){{
-    const t=idThreshold.value.trim();
-    if(t!==''&&x.id!==''&&Number(x.id)>Number(t)) return 'threshold-row';
-    return '';
-}}
-
-function applyTableTheme(){{
-    const homeTableWrap=document.getElementById('homeTableWrap');
-    if(!homeTableWrap) return;
-    homeTableWrap.classList.toggle('theme-day',currentTheme==='day');
-    homeTableWrap.classList.toggle('theme-night',currentTheme==='night');
-    document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===currentTheme));
-}}
-
-const tabBox=document.getElementById('tabs');
-tabBox.innerHTML=Object.keys(META).map(k=>'<button class="home-tab" data-board="'+k+'" onclick="setBoard(\''+k+'\')">'+META[k].label+'</button>').join('');
-
-start.onchange=end.onchange=sort1.onchange=sort2.onchange=render;
-q.oninput=qi.oninput=render;
-
-document.querySelectorAll('.theme-btn').forEach(b=>{{
-    b.onclick=()=>{{
-        currentTheme=b.dataset.theme;
-        applyTableTheme();
-        render();
-    }};
-}});
-
-idThreshold.oninput=render;
-setBoard(DEFAULT_BOARD);
-applyTableTheme();
-</script></body></html>'''
-    (OUTPUT_DIR/"index.html").write_text(home_html,encoding='utf-8')
-    (OUTPUT_DIR/"build-info.json").write_text(json.dumps({"generated_at":dt.datetime.now().isoformat(timespec='seconds'),"id_key":"剧集ID","boards":{k:{"start":str(v.日期.min()),"end":str(v.日期.max()),"records":len(v)} for k,v in boards.items()}},ensure_ascii=False,indent=2),encoding='utf-8')
-    print("🎉 构建完成")
-
-if __name__=='__main__':main()
+if __name__ == "__main__":
+    main()
