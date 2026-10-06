@@ -2,6 +2,7 @@ name: 更新猫耳网页
 
 on:
   workflow_dispatch:
+
   push:
     branches: [main]
     paths:
@@ -9,6 +10,12 @@ on:
       - 'build_site.py'
       - 'requirements.txt'
       - '.github/workflows/build-site.yml'
+
+  workflow_run:
+    workflows:
+      - 抓取猫耳数据
+    types:
+      - completed
 
 concurrency:
   group: maoer-site
@@ -21,11 +28,15 @@ permissions:
 
 jobs:
   build:
+    # workflow_run 只有在 fetch-data 成功时才构建
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
     runs-on: ubuntu-latest
-    
+
     environment:
       name: github-pages
-  
 
     steps:
       - name: Checkout repository
@@ -42,6 +53,15 @@ jobs:
 
       - name: Build Dashboard
         run: python build_site.py
+
+      - name: Check generated homepage
+        run: |
+          echo "检查生成的首页是否包含颜色控制..."
+          grep -n "剧集显示设置" site/index.html
+          grep -n "白天" site/index.html
+          grep -n "黑夜" site/index.html
+          grep -n "idThreshold" site/index.html
+          echo "颜色控制检查完成"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
