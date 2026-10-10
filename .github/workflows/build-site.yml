@@ -54,14 +54,42 @@ jobs:
       - name: Build Dashboard
         run: python build_site.py
 
-      - name: Check generated homepage
+      
+      - name: 检查各榜单页面的颜色控制
+        shell: bash
         run: |
-          echo "检查生成的首页是否包含颜色控制..."
-          grep -n "剧集显示设置" site/index.html
-          grep -n "白天" site/index.html
-          grep -n "黑夜" site/index.html
-          grep -n "idThreshold" site/index.html
-          echo "颜色控制检查完成"
+          echo "检查各榜单页面是否包含颜色控制..."
+
+          found=0
+
+          for file in site/sales.html site/popularity.html site/new.html; do
+            if [ ! -f "$file" ]; then
+              echo "跳过不存在的页面: $file"
+              continue
+            fi
+
+            echo "检查 $file"
+
+            for keyword in "剧集显示设置" "白天" "黑夜" "idThreshold"; do
+              if ! grep -q "$keyword" "$file"; then
+                echo "::error::页面 $file 缺少控件: $keyword"
+                exit 1
+              fi
+            done
+
+            echo "✅ $file 颜色控制检查通过"
+            found=$((found + 1))
+          done
+
+          if [ "$found" -eq 0 ]; then
+            echo "::error::没有找到任何可检查的榜单页面"
+            exit 1
+          fi
+
+          echo "✅ 颜色控制检查完成"
+
+
+      
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
