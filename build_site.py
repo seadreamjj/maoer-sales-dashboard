@@ -440,7 +440,7 @@ document.querySelectorAll('.period-switch button').forEach(b=>b.addEventListener
         "__BOARDS__": json.dumps({k:{"label":BOARDS[k]["label"],"json":BOARDS[k]["json"],"detail":BOARDS[k]["detail"]} for k in available},ensure_ascii=False,separators=(",",":")),
         "__DAILY_CARDS__": "".join(daily_cards),
     }
-     for marker, value in replacements.items():
+    for marker, value in replacements.items():
         home_html = home_html.replace(marker, value)
 
     # 生成首页
