@@ -440,14 +440,56 @@ document.querySelectorAll('.period-switch button').forEach(b=>b.addEventListener
         "__BOARDS__": json.dumps({k:{"label":BOARDS[k]["label"],"json":BOARDS[k]["json"],"detail":BOARDS[k]["detail"]} for k in available},ensure_ascii=False,separators=(",",":")),
         "__DAILY_CARDS__": "".join(daily_cards),
     }
-    for marker,value in replacements.items(): home_html=home_html.replace(marker,value)
-    (OUTPUT_DIR/"index.html").write_text(home_html,encoding="utf-8")
-    build_info={"generated_at":dt.datetime.now().isoformat(timespec="seconds"),"id_key":"剧集ID","homepage_build":"2026-10-10-overview-growth-interpolation-v1","homepage_features":["latest-day-top3-per-board","7-day-and-30-day-growth-top3","interpolated-gap-and-outlier-markers"],"board_features":["per-board-day-night-theme","per-board-drama-id-threshold-color"],"boards":{k:{"start":str(v.日期.min()),"end":str(v.日期.max()),"records":len(v)} for k,v in available.items()}}
-    (OUTPUT_DIR/"build-info.json").write_text(json.dumps(build_info,ensure_ascii=False,indent=2),encoding="utf-8")
+     for marker, value in replacements.items():
+        home_html = home_html.replace(marker, value)
+
+    # 生成首页
+    (OUTPUT_DIR / "index.html").write_text(
+        home_html, encoding="utf-8"
+    )
+
+    # 新增：生成销量估算器页面
+    from sales_calculator import build_calculator_page
+    build_calculator_page(OUTPUT_DIR)
+
+    # 确认计算器 HTML 已经生成
+    calculator_file = OUTPUT_DIR / "sales-calculator.html"
+    if not calculator_file.exists():
+        raise RuntimeError("销量估算器页面生成失败！")
+    print(f"✅ 销量估算器页面已生成：{calculator_file}")
+
+    # 原有的构建信息，保持不变
+    build_info = {
+        "generated_at": dt.datetime.now().isoformat(timespec="seconds"),
+        "id_key": "剧集ID",
+        "homepage_build": "2026-10-10-overview-growth-interpolation-v1",
+        "homepage_features": [
+            "latest-day-top3-per-board",
+            "7-day-and-30-day-growth-top3",
+            "interpolated-gap-and-outlier-markers"
+        ],
+        "board_features": [
+            "per-board-day-night-theme",
+            "per-board-drama-id-threshold-color"
+        ],
+        "boards": {
+            k: {
+                "start": str(v.日期.min()),
+                "end": str(v.日期.max()),
+                "records": len(v)
+            }
+            for k, v in available.items()
+        }
+    }
+
+    (OUTPUT_DIR / "build-info.json").write_text(
+        json.dumps(build_info, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+
     print("首页总览：最新日榜单前三 + 7/30 天增长榜 + 趋势插值标记")
     print("🎉 构建完成")
 
-from sales_calculator import build_calculator_page
-build_calculator_page(OUTPUT_DIR)
+
 
 if __name__=='__main__':main()
