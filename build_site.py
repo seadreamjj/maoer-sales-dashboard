@@ -235,10 +235,33 @@ CSS=r'''<style>
 </style>'''
 PLOTLY='<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>'
 
+
 def nav(active):
-    links=[]
-    for k,c in BOARDS.items():links.append(f'<a class="{"active" if k==active else ""}" href="{k}.html">{c["label"]}</a>')
-    return f'<div class="topbar"><div class="nav"><a class="brand" href="index.html" style="color:inherit;text-decoration:none">猫耳数据中心<small>MAOER · AUDIO DRAMA</small></a><div class="navlinks">{"".join(links)}</div></div></div>'
+    links = []
+
+    # 原有的三个榜单入口
+    for k, c in BOARDS.items():
+        links.append(
+            f'<a class="{"active" if k == active else ""}" '
+            f'href="{k}.html">{c["label"]}</a>'
+        )
+
+    # 新增：销量估算器入口
+    active_cls = "active" if active == "calculator" else ""
+    links.append(
+        f'<a class="{active_cls}" href="sales-calculator.html">销量估算器</a>'
+    )
+
+    return (
+        f'<div class="topbar"><div class="nav">'
+        f'<a class="brand" href="index.html" '
+        f'style="color:inherit;text-decoration:none">'
+        f'猫耳数据中心<small>MAOER · AUDIO DRAMA</small></a>'
+        f'<div class="navlinks">{"".join(links)}</div>'
+        f'</div></div>'
+    )
+
+
 
 def detail_name(board,did):return f'{BOARDS[board]["detail"]}_{re.sub(r"[^0-9A-Za-z_-]","_",str(did))}.html'
 
@@ -423,5 +446,8 @@ document.querySelectorAll('.period-switch button').forEach(b=>b.addEventListener
     (OUTPUT_DIR/"build-info.json").write_text(json.dumps(build_info,ensure_ascii=False,indent=2),encoding="utf-8")
     print("首页总览：最新日榜单前三 + 7/30 天增长榜 + 趋势插值标记")
     print("🎉 构建完成")
+
+from sales_calculator import build_calculator_page
+build_calculator_page(OUTPUT_DIR)
 
 if __name__=='__main__':main()
