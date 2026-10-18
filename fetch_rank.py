@@ -151,14 +151,42 @@ def parse_drama_metadata(drama_id, payload):
     tags = _names(info.get("tags"))
     cvs = info.get("cvs") or []
     cv1 = cv2 = ""
+
     if isinstance(cvs, list):
-        if len(cvs) > 0:
-            cv1 = _names(cvs[0])[0] if _names(cvs[0]) else ""
-        if len(cvs) > 1:
-            cv2 = _names(cvs[1])[0] if _names(cvs[1]) else ""
+        cv_names = []
+        for item in cvs:
+            if not isinstance(item, dict):
+                continue
+
+        # 新版接口：CV 名称位于 cv_info.name
+            cv_info = item.get("cv_info")
+            if isinstance(cv_info, dict):
+                name = cv_info.get("name", "")
+            else:
+            # 兼容其他接口结构
+                name = item.get("name", "")
+
+            if name and str(name).strip():
+                cv_names.append(str(name).strip())
+
+        cv1 = cv_names[0] if len(cv_names) > 0 else ""
+        cv2 = cv_names[1] if len(cv_names) > 1 else ""
+
     elif isinstance(cvs, dict):
-        cv1 = str(cvs.get("cv1", {}).get("name", "") if isinstance(cvs.get("cv1"), dict) else cvs.get("cv1", ""))
-        cv2 = str(cvs.get("cv2", {}).get("name", "") if isinstance(cvs.get("cv2"), dict) else cvs.get("cv2", ""))
+        for key, target in (("cv1", "cv1"), ("cv2", "cv2")):
+            value = cvs.get(key, "")
+            if isinstance(value, dict):
+                value = value.get("cv_info", {}).get("name", "") \
+                    if isinstance(value.get("cv_info"), dict) \
+                    else value.get("name", "")
+            if target == "cv1":
+                cv1 = str(value or "").strip()
+            else:
+                cv2 = str(value or "").strip()
+
+    
+
+   
     try:
         vip_raw = int(info.get("vip", 0) or 0)
     except (TypeError, ValueError):
