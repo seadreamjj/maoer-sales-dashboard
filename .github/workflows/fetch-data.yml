@@ -101,17 +101,20 @@ jobs:
           SALES="data/raw/猫耳销量月榜${DATE}.csv"
           POPULAR="data/raw/猫耳人气月榜${DATE}.csv"
           NEW="data/raw/猫耳新品日榜${DATE}.csv"
+          WEEKLY="data/raw/猫耳销量周榜${DATE}.csv"
 
           echo ""
           echo "检查以下文件："
           echo "  $SALES"
           echo "  $POPULAR"
           echo "  $NEW"
+          echo "  $WEEKLY"
           echo ""
 
           SALES_OK=false
           POPULAR_OK=false
           NEW_OK=false
+          WEEKLY_OK=false
 
 
           # --------------------------------------------------------
@@ -123,6 +126,17 @@ jobs:
           else
             echo "❌ 销量月榜：不存在"
           fi
+
+          # --------------------------------------------------------
+          # 销量周榜
+          # --------------------------------------------------------
+          if [ -s "$WEEKLY" ]; then
+            WEEKLY_OK=true
+            echo "✅ 销量周榜：已存在"
+          else
+            echo "❌ 销量周榜：不存在"
+          fi
+
 
 
           # --------------------------------------------------------
@@ -151,12 +165,13 @@ jobs:
           # 三个榜单全部存在
           # --------------------------------------------------------
           if [ "$SALES_OK" = true ] && \
+             [ "$WEEKLY_OK" = true ] && \
              [ "$POPULAR_OK" = true ] && \
              [ "$NEW_OK" = true ]; then
 
             echo ""
             echo "=========================================="
-            echo "✅ 今天三个榜单都已经存在"
+            echo "✅ 今天四个榜单都已经存在"
             echo "不再重复抓取。"
             echo "=========================================="
 
@@ -206,6 +221,7 @@ jobs:
           SALES="data/raw/猫耳销量月榜${DATE}.csv"
           POPULAR="data/raw/猫耳人气月榜${DATE}.csv"
           NEW="data/raw/猫耳新品日榜${DATE}.csv"
+          WEEKLY="data/raw/猫耳销量周榜${DATE}.csv"
 
           echo "=========================================="
           echo "检查抓取结果"
@@ -248,7 +264,7 @@ jobs:
 
 
           echo ""
-          echo "✅ 三个榜单均已成功生成。"
+          echo "✅ 四个榜单均已成功生成。"
 
 
       # ============================================================
