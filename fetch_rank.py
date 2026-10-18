@@ -143,65 +143,128 @@ def _names(value):
     return []
 
 
+
 def parse_drama_metadata(drama_id, payload):
-    info = _find_metadata_object(payload) or {}
-    author = info.get("author", "")
-    if isinstance(author, dict):
-        author = author.get("name", "")
-    tags = _names(info.get("tags"))
-    cvs = info.get("cvs") or []
-    cv1 = cv2 = ""
+    """解析猫耳剧集基础信息：作者、会员、价格、标签、CV1、CV2。"""
+    try:
+        # 兼容传入 JSON 字符串或已解析的字典
+        if isinstance(payload, str):
+            payload = json.loads(payload)
 
-    if isinstance(cvs, list):
+        if not isinstance(payload, dict):
+            raise ValueError("API 返回内容不是字典")
+
+        # 按 getdrama 的实际数据结构读取
+        info = payload.get("info", {})
+        if not isinstance(info, dict):
+            info = {}
+
+        drama = info.get("drama", {})
+        if not isinstance(drama, dict):
+            drama = {}
+
+        # 作者
+        author = drama.get("author", "")
+        if isinstance(author, dict):
+            author = author.get("name", "")
+        author = str(author or "").strip()
+
+        # 标签：例如玄幻、仙侠、情有独钟
+        tags = drama.get("tags", [])
+        tag_names = []
+        if isinstance(tags, list):
+            for tag in tags:
+                if isinstance(tag, dict):
+                    name = tag.get("name", "")
+                else:
+                    name = tag
+                name = str(name or "").strip()
+                if name and name not in tag_names:
+                    tag_names.append(name)
+        elif isinstance(tags, dict):
+            name = tags.get("name", "")
+            if name:
+                tag_names.append(str(name).strip())
+
+        # CV：提取配音演员姓名，不把角色名误当成 CV 姓名
+        cv_list = info.get("cvs", [])
         cv_names = []
-        for item in cvs:
-            if not isinstance(item, dict):
-                continue
 
-        # 新版接口：CV 名称位于 cv_info.name
-            cv_info = item.get("cv_info")
-            if isinstance(cv_info, dict):
-                name = cv_info.get("name", "")
-            else:
-            # 兼容其他接口结构
-                name = item.get("name", "")
+        if isinstance(cv_list, list):
+            for cv in cv_list:
+                if not isinstance(cv, dict):
+                    continue
 
-            if name and str(name).strip():
-                cv_names.append(str(name).strip())
+                cv_info = cv.get("cv_info", {})
+                if isinstance(cv_info, dict):
+                    name = cv_info.get("name", "")
+                else:
+                    name = ""
 
-        cv1 = cv_names[0] if len(cv_names) > 0 else ""
-        cv2 = cv_names[1] if len(cv_names) > 1 else ""
+                name = str(name or "").strip()
+                if name:
+                    cv_names.append(name)
 
-    elif isinstance(cvs, dict):
-        for key, target in (("cv1", "cv1"), ("cv2", "cv2")):
-            value = cvs.get(key, "")
-            if isinstance(value, dict):
-                value = value.get("cv_info", {}).get("name", "") \
-                    if isinstance(value.get("cv_info"), dict) \
-                    else value.get("name", "")
-            if target == "cv1":
-                cv1 = str(value or "").strip()
-            else:
-                cv2 = str(value or "").strip()
+        elif isinstance(cv_list, dict):
+            for key in ("cv1", "cv2"):
+                cv = cv_list.get(key, {})
+                if isinstance(cv, dict):
+                    cv_info = cv.get("cv_info", {})
+                    name = (
+                        cv_info.get("name", "")
+                        if isinstance(cv_info, dict) and cv_info.get("name")
+                        else cv.get("name", "")
+                    )
+                else:
+                    name = cv
+
+                name = str(name or "").strip()
+                if name:
+                    cv_names.append(name)
+
+        # 价格：沿用原有逻辑，将 API 返回的价格除以 10
+        try:
+            price = float(drama.get("price", 0) or 0) / 10
+            price = round(price, 2)
+        except (TypeError, ValueError):
+            price = ""
+
+        # 会员标记
+        vip = drama.get("vip", 0)
+        try:
+            vip = int(vip or 0)
+        except (TypeError, ValueError):
+            vip = 0
+
+        return {
+            "剧集ID": str(drama.get("id") or drama_id),
+            "作者": author,
+            "是否会员剧": "是" if vip == 1 else "否",
+            "价格（元）": price,
+            "标签": "、".join(tag_names),
+            "CV1": cv_names[0] if len(cv_names) > 0 else "",
+            "CV2": cv_names[1] if len(cv_names) > 1 else "",
+            "信息更新时间": now_beijing().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
+    except Exception as e:
+        print(f"⚠️ 解析剧集 {drama_id} 的基础信息失败：{e}")
+        return {
+            "剧集ID": str(drama_id),
+            "作者": "",
+            "是否会员剧": "",
+            "价格（元）": "",
+            "标签": "",
+            "CV1": "",
+            "CV2": "",
+            "信息更新时间": now_beijing().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+
 
     
 
    
-    try:
-        vip_raw = int(info.get("vip", 0) or 0)
-    except (TypeError, ValueError):
-        vip_raw = 0
-    try:
-        price = float(info.get("price", 0) or 0) / 10
-    except (TypeError, ValueError):
-        price = None
-    return {
-        "剧集ID": str(drama_id), "作者": str(author or ""),
-        "是否会员剧": "是" if vip_raw == 1 else "否",
-        "价格（元）": round(price, 2) if price is not None else "",
-        "标签": "、".join(dict.fromkeys(tags)), "CV1": cv1, "CV2": cv2,
-        "信息更新时间": now_beijing().strftime("%Y-%m-%d %H:%M:%S"),
-    }
+    
 
 
 def upsert_drama_info_cache(metadata_rows):
