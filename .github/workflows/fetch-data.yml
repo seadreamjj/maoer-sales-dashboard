@@ -162,7 +162,7 @@ jobs:
 
 
           # --------------------------------------------------------
-          # 三个榜单全部存在
+          # 四个榜单全部存在
           # --------------------------------------------------------
           if [ "$SALES_OK" = true ] && \
              [ "$WEEKLY_OK" = true ] && \
@@ -191,15 +191,15 @@ jobs:
 
 
       # ============================================================
-      # 6. 抓取猫耳三榜单
+      # 6. 抓取猫耳四榜单
       # ============================================================
-      - name: Fetch 猫耳三榜单
+      - name: Fetch 猫耳四榜单
         if: steps.check_today.outputs.done != 'true'
         env:
           MAOER_COOKIE: ${{ secrets.MAOER_COOKIE }}
         run: |
           echo "=========================================="
-          echo "开始抓取猫耳三榜单"
+          echo "开始抓取猫耳四榜单"
           echo "=========================================="
 
           python fetch_rank.py
@@ -235,6 +235,14 @@ jobs:
             echo "✅ $SALES"
           else
             echo "❌ 缺少：$SALES"
+            FAILED=true
+          fi
+          
+
+          if [ -s "$WEEKLY" ]; then
+            echo "✅ $WEEKLY"
+          else
+            echo "❌ 缺少：$WEEKLY"
             FAILED=true
           fi
 
