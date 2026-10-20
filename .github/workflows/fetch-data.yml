@@ -275,55 +275,84 @@ jobs:
           echo "✅ 四个榜单均已成功生成。"
 
 
+      
       # ============================================================
-      # 8. 再次同步远程 main
-      #
-      # 防止 workflow 运行期间 main 又发生变化。
+      # 8. 暂存抓取结果，同步远程 main
       # ============================================================
-      - name: Sync before commit
-        if: steps.check_today.outputs.done != 'true'
-        run: |
-          echo "同步最新远程 main..."
-
-          git fetch origin main
-
-          git rebase origin/main
-
-
-      # ============================================================
-      # 9. 提交数据
-      # ============================================================
-      - name: Save daily data to repository
+      - name: Prepare data and sync latest main
         if: steps.check_today.outputs.done != 'true'
         shell: bash
         run: |
+          set -e
+
+          echo "暂存本次抓取生成的数据和日志..."
+          git add data/raw/ logs/
+
+          if git diff --cached --quiet; then
+            echo "没有需要提交的文件。"
+            echo "NO_CHANGES=true" >> "$GITHUB_ENV"
+            exit 0
+          fi
+
+          echo "保存本次抓取结果..."
+          git diff --cached --binary > /tmp/maoer-data.patch
+          git reset
+
+          echo "同步远程 main..."
+          git fetch origin main
+
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              stash push --include-untracked -m "before-maoer-sync" || true
+
+          git reset --hard origin/main
+
+          echo "重新应用本次抓取结果..."
+          git apply --3way /tmp/maoer-data.patch || {
+            echo "无法自动合并本次抓取结果与远程文件。"
+            echo "为避免覆盖远程数据，停止提交。"
+            exit 1
+          }
+
+          echo "同步完成。"
+
+      # ============================================================
+      # 9. 提交数据并重试推送
+      # ============================================================
+      - name: Commit and push daily data
+        if: steps.check_today.outputs.done != 'true' && env.NO_CHANGES != 'true'
+        shell: bash
+        run: |
+          set -e
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          echo "检查 Git 变化..."
-
           git add data/raw/ logs/
 
           if git diff --cached --quiet; then
-
-            echo ""
-            echo "没有新的数据文件需要提交。"
-
-          else
-
-            echo ""
-            echo "发现新的数据文件："
-            git diff --cached --stat
-
-            git commit -m "data: update 猫耳榜单"
-
-            echo ""
-            echo "推送到 GitHub..."
-
-            git push origin main
-
-            echo ""
-            echo "✅ 数据已经成功提交。"
-
+            echo "没有新的数据需要提交。"
+            exit 0
           fi
+
+          git commit -m "data: update 猫耳榜单"
+
+          for attempt in 1 2 3 4 5; do
+            echo "推送尝试：$attempt/5"
+
+            if git push origin HEAD:main; then
+              echo "数据已成功推送。"
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 5 ]; then
+              echo "连续 5 次推送失败。"
+              exit 1
+            fi
+
+            echo "远程 main 可能已更新，重新同步..."
+
+            git fetch origin main
+
+            git -c rebase.autoStash=true rebase origin/main
+          done
