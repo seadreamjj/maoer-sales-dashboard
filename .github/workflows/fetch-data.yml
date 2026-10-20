@@ -277,6 +277,7 @@ jobs:
 
       
       
+     
       # ============================================================
       # 8. 暂存并提交本次抓取结果
       # ============================================================
@@ -298,7 +299,6 @@ jobs:
             exit 0
           fi
 
-          echo "本次变更："
           git diff --cached --stat
 
           echo "提交本次抓取结果..."
@@ -315,31 +315,26 @@ jobs:
 
           for attempt in 1 2 3 4 5; do
             echo ""
-            echo "=========================================="
             echo "同步与推送：第 $attempt/5 次尝试"
-            echo "=========================================="
 
-            echo "获取远程 main..."
             git fetch origin main
 
-            echo "同步本地提交..."
             if ! git rebase origin/main; then
-              echo "❌ Rebase 失败，可能存在文件冲突。"
+              echo "Rebase 失败，可能存在文件冲突。"
               echo "停止自动操作，请检查冲突文件和日志。"
               exit 1
             fi
 
-            echo "推送到 GitHub..."
             if git push origin HEAD:main; then
-              echo "✅ 猫耳榜单数据已成功推送。"
+              echo "猫耳榜单数据已成功推送。"
               exit 0
             fi
 
             if [ "$attempt" -lt 5 ]; then
-              echo "⚠️ 推送失败，2 秒后重新同步并重试..."
+              echo "推送失败，2 秒后重新同步并重试..."
               sleep 2
             fi
           done
 
-          echo "❌ 连续 5 次推送失败，请检查日志。"
+          echo "连续 5 次推送失败，请检查日志。"
           exit 1
