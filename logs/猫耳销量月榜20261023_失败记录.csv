@@ -1,0 +1,2 @@
+﻿排名,剧名,剧集ID,错误
+26,宋玉章 第一季,86589,"ConnectionError: HTTPSConnectionPool(host='www.missevan.com', port=443): Read timed out."
