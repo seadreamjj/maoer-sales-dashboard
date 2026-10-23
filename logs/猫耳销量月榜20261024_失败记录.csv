@@ -1,0 +1,27 @@
+﻿排名,剧名,剧集ID,错误
+1,旧故新长 全一季,86778,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13729845
+3,灯花笑 下季,96416,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13772302
+4,悬日 下季,96485,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13695345
+6,全职高手广播剧第四季 上,96092,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=96092
+10,满城衣冠 全一季,90878,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13716149
+11,天官赐福 第三季,82040,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=82040
+12,灯花笑 上季,94733,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=94733
+14,天官赐福 第二季,75026,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=9644712
+18,尾钩,95503,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13528185
+20,你的雪人能活多久 第一季,93787,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=93787
+22,放学等我 第一季,64911,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=8078338
+23,放学等我 第二季,68837,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=68837
+25,囚于永夜,94916,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=94916
+26,台风眼 第一季,52404,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=52404
+30,台风眼 第二季,68664,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=68664
+31,魔道祖师 第一季,15861,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=15861
+32,传闻,95625,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=95625
+34,藏南晚星,85110,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=85110
+35,魔道祖师 第二季,19059,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=1157507
+37,沙子，时间，雨树,94825,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13644301
+38,某某 第一季,58219,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=6724902
+39,吞海 第一季,29187,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=29187
+40,江医生 第一季,81852,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=10893703
+41,将进酒 第一季,25944,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=1734932
+42,你的距离,31552,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=31552
+50,吞海 第三季（上）,73221,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=73221

@@ -1,0 +1,16 @@
+﻿排名,剧名,剧集ID,错误
+1,天官赐福 第四季,91718,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=91718
+3,尚公主 第一季,95847,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13634542
+6,伏特加与曼特宁,92988,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=12535210
+7,灯花笑 下季,96416,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13682793
+9,尾钩,95503,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13566567
+11,悬日 下季,96485,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13695345
+12,什刹海是海吗,94863,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=94863
+16,沙子，时间，雨树,94825,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=94825
+17,干涸地,86725,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=11224622
+18,恋爱法则,96486,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=96486
+21,传闻,95625,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdramabysound?sound_id=13513708
+24,守寡后我重生了 第二季,95212,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=95212
+27,赤霞珠,95114,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=95114
+28,乘鸾 第一季,94849,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=94849
+30,抱抱,86736,HTTPError: HTTP 412 for https://www.missevan.com/dramaapi/getdrama?drama_id=86736
