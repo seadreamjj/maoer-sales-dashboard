@@ -1,3 +1,4 @@
+
 name: 更新猫耳网页
 
 on:
@@ -8,6 +9,7 @@ on:
     paths:
       - 'data/raw/**'
       - 'build_site.py'
+      - 'sales_calculator.py'
       - 'requirements.txt'
       - '.github/workflows/build-site.yml'
 
@@ -23,20 +25,18 @@ concurrency:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
+
+  # ============================================================
+  # JOB 1：构建网页并上传 Artifact
+  # ============================================================
   build:
-    # workflow_run 只有在 fetch-data 成功时才构建
     if: >
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
 
     runs-on: ubuntu-latest
-
-    environment:
-      name: github-pages
 
     steps:
       - name: Checkout repository
@@ -54,7 +54,21 @@ jobs:
       - name: Build Dashboard
         run: python build_site.py
 
-      
+      - name: 检查网页构建结果
+        shell: bash
+        run: |
+          if [ ! -s "site/index.html" ]; then
+            echo "::error::site/index.html 不存在或为空"
+            exit 1
+          fi
+
+          if [ ! -f "site/sales-calculator.html" ]; then
+            echo "::error::销量计算器页面不存在"
+            exit 1
+          fi
+
+          echo "网页构建检查通过"
+
       - name: 检查各榜单页面的颜色控制
         shell: bash
         run: |
@@ -77,7 +91,7 @@ jobs:
               fi
             done
 
-            echo "✅ $file 颜色控制检查通过"
+            echo "检查通过"
             found=$((found + 1))
           done
 
@@ -86,10 +100,7 @@ jobs:
             exit 1
           fi
 
-          echo "✅ 颜色控制检查完成"
-
-
-      
+          echo "颜色控制检查完成"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -97,8 +108,28 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
+          name: github-pages
           path: './site'
+          retention-days: 1
 
+  # ============================================================
+  # JOB 2：部署网页
+  # ============================================================
+  deploy:
+    needs: build
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
